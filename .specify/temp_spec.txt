@@ -1,0 +1,53 @@
+Projecte: Plataforma de Venda d'Entrades per a un Esdeveniment d'Alta Demanda (Temps Real)
+1. Context i objectiu del projecte
+En aquest projecte no esteu fent una web "clàssica" de compra d'entrades. Esteu construint una aplicació que ha de funcionar quan molts usuaris entren alhora, competeixen pels mateixos seients i esperen respostes immediates i coherents del sistema.
+
+L'objectiu principal és que implementeu funcionalitats de temps real utilitzant Socket.IO, i que entengueu problemes reals com:
+- concurrència
+- bloqueig temporal de recursos
+- sincronització d'estat entre molts clients
+- gestió de conflictes
+
+El projecte simula la venda d'entrades d'un esdeveniment molt popular (concert, final esportiva, conferència internacional, etc.).
+
+2. Descripció general del sistema
+L'aplicació permetrà:
+- Visualitzar un esdeveniment amb un plànol de seients
+- Reservar seients temporalment mentre dura el procés de compra
+- Veure en temps real com altres usuaris reserven o compren entrades
+- Finalitzar la compra o perdre la reserva si s'esgota el temps
+- Consultar entrades comprades
+- Gestionar l'esdeveniment des d'un panell d'administració amb dades en temps real
+
+El servidor és sempre l'única font de veritat. El client mai decideix l'estat d'un seient.
+
+3. Funcionalitats
+3.1 Part usuari
+3.1.1 Vista de l'esdeveniment: informació general (nom, data/hora, recinte, descripció, preus per tipus)
+3.1.2 Mapa de seients en temps real: estats (Disponible, Reservat, Seleccionat per mi, Venut)
+3.1.3 Reserva temporal: selecció fins a N seients, temporitzador 3-5 minuts, expiració automàtica
+3.1.4 Procés de compra: dades personals, confirmació, validació servidor, actualització temps real
+3.1.5 Consulta d'entrades: per correu electrònic o compte d'usuari
+
+3.2 Part administrativa
+3.2.1 Gestió de l'esdeveniment: crear/editar, aforament, plànol, categories i preus
+3.2.2 Panell temps real: seients per estat, usuaris connectats, reserves actives, compres
+3.2.3 Informes: recaptació per tipus, total, percentatge ocupació, evolució temporal
+
+4. Temps real (obligatori)
+4.1 Ús de Socket.IO: sincronització estat, reserva/alliberament, notificació compra, gestió múltiples usuaris
+4.2 Regles: client no pot forçar estat, servidor valida disponibilitat/propietat/expiració
+4.3 Gestió concurrència: dos usuaris mateix seient, només un ho aconsegueix, l'altre rep resposta clara
+
+5. Requisits tècnics
+5.1 Backend: Node.js + Express, servei Socket.IO, validació servidor, gestió expiració, base de dades
+5.2 Frontend: Vue + Nuxt, gestió estat reactiva, interfície clara
+5.3 Seguretat: validació client+servidor, limitació reserves per usuari, gestió reconnexió, protecció abús
+
+6. Lliurables: Repositori Git, publicació, Script SQL, Manual instal·lació, Diagrames, Tests (Cypress + test concurrència)
+
+7. Ampliació opcional: WebRTC assistència 1 a 1 (àudio/vídeo punt a punt, Socket.IO com signaling)
+
+8. Criteris avaluació: Funcionament concurrència, coherència estat, ús Socket.IO, qualitat codi, experiència usuari, (opcional) WebRTC
+
+9. Observacions finals: Tot en català, codi ordenat i comentat, sense CDN externs
