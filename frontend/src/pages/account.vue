@@ -25,7 +25,7 @@
               <span class="label">Seients:</span>
               <div class="seats-list">
                 <span v-for="seient in reserva.seients" :key="seient.id" class="seat-tag">
-                  {{ seient.fila }}{{ seient.numero }} ({{ seient.zona?.nom }})
+                  {{ seient.fila }}{{ seient.numero }} ({{ seient.zona?.nom || 'General' }})
                 </span>
               </div>
             </div>
@@ -86,15 +86,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '~/stores/authStore';
-import { apiClient } from '~/services/apiClient';
 
 definePageMeta({
   middleware: 'auth'
 });
 
-const router = useRouter();
 const authStore = useAuthStore();
 
 interface Entrada {
@@ -139,12 +136,20 @@ const usuari = computed(() => authStore.usuari);
 
 onMounted(async () => {
   try {
-    const [entradesDades, reservesDades] = await Promise.all([
+    const { apiClient } = await import('~/services/apiClient');
+    
+    const [entradesDades, reservesDades] = await Promise.allSettled([
       apiClient.get('/entrades/usuari'),
       apiClient.get('/reserves/usuari')
     ]);
-    entrades.value = (entradesDades as any).entrades;
-    reservesActives.value = (reservesDades as any).reserves;
+
+    if (entradesDades.status === 'fulfilled') {
+      entrades.value = (entradesDades.value as any).entrades || [];
+    }
+    
+    if (reservesDades.status === 'fulfilled') {
+      reservesActives.value = (reservesDades.value as any).reserves || [];
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error carregant dades';
   } finally {

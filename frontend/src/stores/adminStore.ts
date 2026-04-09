@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useRuntimeConfig } from '#app';
 
 export interface AdminStats {
@@ -24,14 +24,15 @@ export const useAdminStore = defineStore('admin', () => {
 
   function getApiBaseUrl() {
     const config = useRuntimeConfig();
-    return (config.public.apiUrl || 'http://localhost:3000/api').replace(/\/$/, '');
+    const base = (config.public.apiUrl || 'http://localhost:3000').replace(/\/$/, '');
+    return base.endsWith('/api') ? base.slice(0, -4) : base;
   }
 
-  async function obtenirStats(eventos_id: string) {
+  async function obtenirStats(eventId: string) {
     carregant.value = true;
     error.value = null;
     try {
-      const resposta = await fetch(`${getApiBaseUrl()}/admin/events/${eventos_id}/stats`);
+      const resposta = await fetch(`${getApiBaseUrl()}/api/admin/events/${eventId}/stats`);
       if (!resposta.ok) {
         throw new Error('Error en obtenir estadístiques');
       }
@@ -44,9 +45,9 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function obtenirInforme(eventos_id: string) {
+  async function obtenirInforme(eventId: string) {
     try {
-      const resposta = await fetch(`${getApiBaseUrl()}/admin/events/${eventos_id}/report`);
+      const resposta = await fetch(`${getApiBaseUrl()}/api/admin/events/${eventId}/report`);
       if (!resposta.ok) {
         throw new Error('Error en obtenir informe');
       }

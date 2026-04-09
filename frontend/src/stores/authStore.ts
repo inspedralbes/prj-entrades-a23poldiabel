@@ -30,18 +30,27 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function getApiUrl(): string {
+    const base = (config.public.apiUrl || 'http://localhost:3000').replace(/\/$/, '');
+    return base.endsWith('/api') ? base.slice(0, -4) : base;
+  }
+
   async function register(correu_electronic: string, nom: string, contrasenya: string) {
     carregant.value = true;
     error.value = null;
     try {
-      const resposta = await fetch(`${config.public.apiUrl}/auth/register`, {
+      const resposta = await fetch(`${getApiUrl()}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correu_electronic, nom, contrasenya }),
+        body: JSON.stringify({ 
+          email: correu_electronic, 
+          password: contrasenya, 
+          full_name: nom 
+        }),
       });
       const dades = await resposta.json();
       if (!resposta.ok) {
-        throw new Error(dades.missatge || 'Error en el registre');
+        throw new Error(dades.missatge || dades.error || 'Error en el registre');
       }
       token.value = dades.token;
       usuari.value = dades.usuari;
@@ -59,14 +68,17 @@ export const useAuthStore = defineStore('auth', () => {
     carregant.value = true;
     error.value = null;
     try {
-      const resposta = await fetch(`${config.public.apiUrl}/auth/login`, {
+      const resposta = await fetch(`${getApiUrl()}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correu_electronic, contrasenya }),
+        body: JSON.stringify({ 
+          email: correu_electronic, 
+          password: contrasenya 
+        }),
       });
       const dades = await resposta.json();
       if (!resposta.ok) {
-        throw new Error(dades.missatge || 'Error en el login');
+        throw new Error(dades.missatge || dades.error || 'Error en el login');
       }
       token.value = dades.token;
       usuari.value = dades.usuari;
@@ -87,8 +99,9 @@ export const useAuthStore = defineStore('auth', () => {
     cookieUsuari.value = null;
   }
 
-  function getAuthHeader() {
-    return token.value ? { Authorization: `Bearer ${token.value}` } : {};
+  function getAuthHeader(): Record<string, string> {
+    const t = token.value || cookieToken.value;
+    return t ? { Authorization: `Bearer ${t}` } : {};
   }
 
   return {

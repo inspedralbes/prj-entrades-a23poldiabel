@@ -27,12 +27,12 @@
       >
         <div class="event-media">
           <img
-            v-if="event.imatge && !imatgesFallides.has(event.id)"
+            v-if="event.imatge && !imatgesFallides.has(String(event.id))"
             :src="event.imatge"
             :alt="event.nom"
             loading="lazy"
             decoding="async"
-            @error="gestionarErrorImatge(event.id)"
+            @error="gestionarErrorImatge(String(event.id))"
           />
           <div v-else class="event-media-fallback">🎵</div>
         </div>
@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { apiClient } from '~/services/apiClient';
+import { useEventStore } from '~/stores/eventStore';
 
 interface EventItem {
   id: string;
@@ -70,9 +70,11 @@ definePageMeta({
   middleware: 'auth',
 });
 
-const events = ref<EventItem[]>([]);
-const carregant = ref(false);
-const error = ref<string | null>(null);
+const eventStore = useEventStore();
+
+const events = computed(() => eventStore.esdeveniments);
+const carregant = computed(() => eventStore.carregant);
+const error = computed(() => eventStore.error);
 const limit = ref(12);
 const imatgesFallides = ref(new Set<string>());
 
@@ -80,25 +82,7 @@ const eventsVisibles = computed(() => events.value.slice(0, limit.value));
 const potMostrarMes = computed(() => limit.value < events.value.length);
 
 async function carregarEvents() {
-  carregant.value = true;
-  error.value = null;
-
-  try {
-    const response = await apiClient.get('/desenvolupaments');
-    const llista =
-      (response as any).data ||
-      (response as any).eventos ||
-      (response as any).acontecimientos ||
-      (response as any).events ||
-      [];
-
-    events.value = Array.isArray(llista) ? llista : [];
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'No s\'han pogut carregar els esdeveniments';
-    events.value = [];
-  } finally {
-    carregant.value = false;
-  }
+  await eventStore.obtenirEsdeveniments();
 }
 
 function mostrarMes() {

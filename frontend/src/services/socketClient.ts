@@ -16,6 +16,18 @@ class SocketClient {
     }
   }
 
+  private attachStoredListeners() {
+    if (!this.socket) {
+      return;
+    }
+
+    for (const [event, callbacks] of this.listeners.entries()) {
+      for (const callback of callbacks) {
+        this.socket.on(event, callback);
+      }
+    }
+  }
+
   connect() {
     if (this.socket?.connected) {
       return;
@@ -30,6 +42,9 @@ class SocketClient {
       reconnectionDelay: 1000,
       timeout: 5000,
     });
+
+    // Reaplica listeners registrats abans de connectar o després de reconnectar
+    this.attachStoredListeners();
 
     this.socket.on('connect', () => {
       console.log('Connectat al servidor Socket.io');

@@ -14,8 +14,16 @@ interface Options {
 class ApiClient {
   private getBaseUrl() {
     const config = useRuntimeConfig();
-    const configured = config.public.apiUrl || 'http://localhost:3000/api';
-    return configured.replace(/\/$/, '');
+    const base = (config.public.apiUrl || 'http://localhost:3000').replace(/\/$/, '');
+    return base.endsWith('/api') ? base : `${base}/api`;
+  }
+
+  private normalizeEndpoint(endpoint: string): string {
+    const withLeadingSlash = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    if (withLeadingSlash === '/api') {
+      return '';
+    }
+    return withLeadingSlash.startsWith('/api/') ? withLeadingSlash.slice(4) : withLeadingSlash;
   }
 
   private async request<T>(endpoint: string, options: Options = {}): Promise<T> {
@@ -34,11 +42,11 @@ class ApiClient {
       config.body = JSON.stringify(body);
     }
 
-    const resposta = await fetch(`${this.getBaseUrl()}${endpoint}`, config);
+    const resposta = await fetch(`${this.getBaseUrl()}${this.normalizeEndpoint(endpoint)}`, config);
 
     if (!resposta.ok) {
       const error = await resposta.json().catch(() => ({ missatge: 'Error desconegut' }));
-      throw new Error(error.missatge || `Error ${resposta.status}`);
+      throw new Error(error.missatge || error.error || `Error ${resposta.status}`);
     }
 
     return resposta.json();

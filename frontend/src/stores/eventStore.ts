@@ -2,6 +2,13 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useRuntimeConfig } from '#app';
 
+export interface Zona {
+  id: string;
+  nom: string;
+  preu: number;
+  color?: string;
+}
+
 export interface Esdeveniment {
   id: string;
   nom: string;
@@ -9,15 +16,9 @@ export interface Esdeveniment {
   recinte: string;
   descripcio?: string;
   imatge?: string;
-  estat: 'actiu' | 'cancelat' | 'finalitzat';
+  estat: string;
   zones?: Zona[];
-}
-
-export interface Zona {
-  id: string;
-  nom: string;
-  preu: number;
-  capacitat: number;
+  seients?: any[];
 }
 
 export const useEventStore = defineStore('event', () => {
@@ -28,19 +29,22 @@ export const useEventStore = defineStore('event', () => {
 
   function getApiBaseUrl() {
     const config = useRuntimeConfig();
-    return (config.public.apiUrl || 'http://localhost:3000/api').replace(/\/$/, '');
+    const base = (config.public.apiUrl || 'http://localhost:3000').replace(/\/$/, '');
+    return base.endsWith('/api') ? base.slice(0, -4) : base;
   }
 
   async function obtenirEsdeveniments() {
     carregant.value = true;
     error.value = null;
     try {
-      const resposta = await fetch(`${getApiBaseUrl()}/esdeveniments`);
+      const resposta = await fetch(`${getApiBaseUrl()}/api/events`);
       if (!resposta.ok) {
         throw new Error('Error en obtenir esdeveniments');
       }
       const dades = await resposta.json();
-      esdeveniments.value = dades.esdeveniments;
+      // El backend retorna múltiples aliases per compatibilitat
+      const llista = dades.data || dades.esdeveniments || dades.events || dades.eventos || [];
+      esdeveniments.value = Array.isArray(llista) ? llista : [];
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error desconegut';
     } finally {
@@ -52,13 +56,15 @@ export const useEventStore = defineStore('event', () => {
     carregant.value = true;
     error.value = null;
     try {
-      const resposta = await fetch(`${getApiBaseUrl()}/esdeveniments/${id}`);
+      const resposta = await fetch(`${getApiBaseUrl()}/api/events/${id}`);
       if (!resposta.ok) {
         throw new Error('Error en obtenir esdeveniment');
       }
       const dades = await resposta.json();
-      esdevenimentActual.value = dades;
-      return dades;
+      // El backend retorna directament l'objecte event (no embolcallat)
+      const event = dades.data || dades;
+      esdevenimentActual.value = event;
+      return event;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error desconegut';
       return null;

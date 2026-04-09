@@ -5,12 +5,18 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: entrades_db
+      POSTGRES_DB: entrades
+      DB_HOST: entrades-postgres
+      DB_PORT: 5432
+      DB_NAME: entrades
+      DB_USER: postgres
+      DB_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./sql:/docker-entrypoint-initdb.d
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./sql/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -29,11 +35,16 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
-      DATABASE_URL: postgresql://postgres:postgres@entrades-postgres:5432/entrades_db
+      DATABASE_URL: postgresql://postgres:postgres@entrades-postgres:5432/entrades
+      DB_HOST: entrades-postgres
+      DB_PORT: 5432
+      DB_NAME: entrades
+      DB_USER: postgres
+      DB_PASSWORD: postgres
       NODE_ENV: development
       CORS_ORIGIN: http://localhost:5173
       RESERVA_DURADA_MINUTS: 5
-      MAX_SEIENTS_PER_RESERVA: 5
+      MAX_SEIENTS_PER_RESERVA: 3
     depends_on:
       postgres:
         condition: service_healthy

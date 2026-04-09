@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <NuxtLink to="/" class="torna">&larr; Tornar als esdeveniments</NuxtLink>
+    <NuxtLink to="/events" class="torna">&larr; Tornar als esdeveniments</NuxtLink>
 
     <h1>Checkout</h1>
 
@@ -56,7 +56,6 @@ import { useRouter } from 'vue-router';
 import { useReservaStore } from '~/stores/reservaStore';
 import { useSeientStore } from '~/stores/seientStore';
 import { useAuthStore } from '~/stores/authStore';
-import { apiClient } from '~/services/apiClient';
 
 definePageMeta({
   middleware: 'auth'
@@ -87,11 +86,11 @@ const seientsResum = computed(() => {
     if (!seient) {
       return {
         id: seientId,
-        etiqueta: `Seient ${seientId.slice(0, 8)}...`,
+        etiqueta: `Seient ${seientId}`,
       };
     }
 
-    const zona = seient.zona?.nom ? ` (${seient.zona.nom})` : '';
+    const zona = (seient.zona as any)?.nom ? ` (${(seient.zona as any).nom})` : '';
     return {
       id: seientId,
       etiqueta: `Fila ${seient.fila} - Seient ${seient.numero}${zona}`,
@@ -123,6 +122,7 @@ async function confirmarCompra() {
   error.value = null;
 
   try {
+    const { apiClient } = await import('~/services/apiClient');
     await apiClient.post('/compres', {
       reserva_token: reservaActiva.value.token,
       usuari: {

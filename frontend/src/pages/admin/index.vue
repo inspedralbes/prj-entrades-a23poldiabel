@@ -140,7 +140,7 @@ const adminStore = useAdminStore();
 const eventStore = useEventStore();
 
 const selectedEventId = ref<string | null>(null);
-const informe = ref(null);
+const informe = ref<any>(null);
 
 const carregant = computed(() => eventStore.carregant);
 const error = computed(() => eventStore.error || adminStore.error);
@@ -150,6 +150,8 @@ const adminStats = computed(() => adminStore.stats);
 onMounted(async () => {
   await eventStore.obtenirEsdeveniments();
 });
+
+// El adminStore ja crida /api/admin/events/:id/stats correctament
 
 function selectEvent(id: string) {
   selectedEventId.value = id;

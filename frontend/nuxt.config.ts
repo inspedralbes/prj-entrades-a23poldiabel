@@ -26,16 +26,6 @@ export default defineNuxtConfig({
 
   css: ['~/assets/main.css'],
 
-  nitro: {
-    routeRules: {
-      '/api/**': {
-        proxy: process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:3000/api/**' 
-          : 'http://backend:3000/api/**'
-      }
-    }
-  },
-
   runtimeConfig: {
     public: {
       apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:3000',
