@@ -21,5 +21,7 @@ Route::get('/admin/events', [ApiController::class, 'adminEvents']);
 Route::get('/admin/events/{id}/stats', [ApiController::class, 'adminStats']);
 Route::get('/admin/events/{id}/report', [ApiController::class, 'adminReport']);
 Route::post('/admin/events', [ApiController::class, 'adminCreateEvent']);
+Route::put('/admin/events/{id}', [ApiController::class, 'adminUpdateEvent']);
+Route::delete('/admin/events/{id}', [ApiController::class, 'adminDeleteEvent']);
 
 Route::get('/desenvolupaments', [ApiController::class, 'desenvolupaments']);

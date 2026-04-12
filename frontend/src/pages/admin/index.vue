@@ -5,104 +5,92 @@
       <NuxtLink to="/events" class="btn btn-secondary">Tornar</NuxtLink>
     </header>
 
-    <div v-if="carregant" class="loading">Carregant dades...</div>
+    <div class="admin-content">
+      <section class="card crud-section">
+        <h2>CRUD d'Esdeveniments</h2>
 
-    <div v-else-if="error" class="error-message">{{ error }}</div>
+        <form class="crud-form" @submit.prevent="submitForm">
+          <div class="form-grid">
+            <div class="field">
+              <label>Nom</label>
+              <input v-model="form.nom" required />
+            </div>
+            <div class="field">
+              <label>Data i hora</label>
+              <input v-model="form.data_hora" type="datetime-local" required />
+            </div>
+            <div class="field">
+              <label>Recinte</label>
+              <input v-model="form.recinte" required />
+            </div>
+            <div class="field">
+              <label>Estat</label>
+              <select v-model="form.estat">
+                <option value="active">Actiu</option>
+                <option value="cancelled">Cancel·lat</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Descripció</label>
+            <textarea v-model="form.descripcio" rows="3" />
+          </div>
 
-    <div v-else class="admin-content">
-      <!-- Buscador d'event -->
-      <div class="search-section card">
-        <h2>Selecciona un Esdeveniment</h2>
+          <div class="crud-actions">
+            <button class="btn btn-primary" type="submit">{{ form.id ? 'Guardar canvis' : 'Crear esdeveniment' }}</button>
+            <button v-if="form.id" class="btn btn-ghost" type="button" @click="resetForm">Cancel·lar edició</button>
+          </div>
+        </form>
+      </section>
+
+      <div v-if="carregant" class="loading">Carregant dades...</div>
+      <div v-if="error" class="error-message">{{ error }}</div>
+
+      <section class="card list-section">
+        <h2>Llista d'esdeveniments</h2>
         <div class="search-grid">
-          <div v-for="event in events" :key="event.id" class="event-card" @click="selectEvent(event.id)">
+          <article v-for="event in events" :key="event.id" class="event-card" @click="loadStats(event.id)">
             <h3>{{ event.nom }}</h3>
             <p class="event-date">{{ formatDate(event.data_hora) }}</p>
             <p class="event-venue">{{ event.recinte }}</p>
-            <button class="btn btn-primary btn-small" @click.stop="loadStats(event.id)">
-              Veure estadístiques
-            </button>
-          </div>
+            <div class="event-actions">
+              <button class="btn btn-ghost" @click.stop="editEvent(event)">Editar</button>
+              <button class="btn btn-danger" @click.stop="deleteEvent(event.id)">Eliminar</button>
+            </div>
+          </article>
         </div>
-      </div>
+      </section>
 
-      <!-- Estadístiques en temps real -->
-      <div v-if="selectedEventId && adminStats" class="stats-section">
+      <section v-if="selectedEventId && adminStats" class="stats-section">
         <div class="stats-grid">
-          <!-- Distribució de seients -->
           <div class="card stats-card">
             <h2>Distribució de Seients</h2>
             <div class="seat-stats">
-              <div class="stat-row disponibles">
-                <span class="label">Disponibles</span>
-                <span class="value">{{ adminStats.seients.disponibles }}</span>
-              </div>
-              <div class="stat-row seleccionats">
-                <span class="label">Seleccionats</span>
-                <span class="value">{{ adminStats.seients.seleccionats }}</span>
-              </div>
-              <div class="stat-row venuts">
-                <span class="label">Venuts</span>
-                <span class="value">{{ adminStats.seients.venuts }}</span>
-              </div>
-              <div class="stat-row reservats">
-                <span class="label">Reservats</span>
-                <span class="value">{{ adminStats.seients.reservats }}</span>
-              </div>
-            </div>
-            <div class="total">
-              Aforament total: <strong>{{ adminStats.seients.total }}</strong>
+              <div class="stat-row disponibles"><span>Disponibles</span><span>{{ adminStats.seients.disponibles }}</span></div>
+              <div class="stat-row reservats"><span>Reservats</span><span>{{ adminStats.seients.reservats }}</span></div>
+              <div class="stat-row venuts"><span>Venuts</span><span>{{ adminStats.seients.venuts }}</span></div>
             </div>
           </div>
 
-          <!-- Ocupació -->
-          <div class="card stats-card">
-            <h2>Ocupació</h2>
-            <div class="occupancy-meter">
-              <div class="occupancy-bar">
-                <div class="occupancy-fill" :style="{ width: adminStats.ocupacio_percentatge + '%' }"></div>
-              </div>
-              <p class="occupancy-text">{{ adminStats.ocupacio_percentatge }}% ocupat</p>
-            </div>
-          </div>
-
-          <!-- Reserves i compres -->
-          <div class="card stats-card">
-            <h2>Activitat en Temps Real</h2>
-            <div class="activity-stats">
-              <div class="activity-item">
-                <span class="label">Reserves Actives</span>
-                <span class="value">{{ adminStats.reserves_actives }}</span>
-              </div>
-              <div class="activity-item">
-                <span class="label">Compres Confirmades</span>
-                <span class="value">{{ adminStats.compres_totals }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Recaptació -->
           <div class="card stats-card">
             <h2>Recaptació</h2>
             <p class="big-number">{{ adminStats.recaptacio_total }}€</p>
+            <p>{{ adminStats.compres_totals }} compres confirmades</p>
           </div>
         </div>
 
-        <!-- Botó per veure informe detallat -->
         <div class="card action-card">
-          <button class="btn btn-primary" @click="carregarInforme">
-            Veure Informe Detallat
-          </button>
+          <button class="btn btn-primary" @click="carregarInforme">Veure Informe Detallat</button>
         </div>
 
-        <!-- Informe detallat (si es carrega) -->
         <div v-if="informe" class="card informe-section">
           <h2>Informe de Vendes</h2>
           <table class="informe-table">
             <thead>
               <tr>
                 <th>Zona</th>
-                <th>Preu Unitari</th>
-                <th>Quantitat Venuda</th>
+                <th>Preu</th>
+                <th>Quantitat</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -111,63 +99,46 @@
                 <td>{{ zona.nom }}</td>
                 <td>{{ zona.preu }}€</td>
                 <td>{{ zona.quantitat }}</td>
-                <td><strong>{{ zona.total }}€</strong></td>
+                <td>{{ zona.total }}€</td>
               </tr>
             </tbody>
           </table>
-          <div class="informe-total">
-            <h3>Recaptació Total: {{ informe.report.recaptacio_total }}€</h3>
-            <p>Entrades venudes: {{ informe.report.entrades_venudes }}</p>
-          </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, reactive, ref } from 'vue';
+import type { AdminEvent } from '~/stores/adminStore';
 import { useAdminStore } from '~/stores/adminStore';
-import { useEventStore } from '~/stores/eventStore';
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: ['auth', 'admin'],
 });
 
-const router = useRouter();
 const adminStore = useAdminStore();
-const eventStore = useEventStore();
-
 const selectedEventId = ref<string | null>(null);
 const informe = ref<any>(null);
 
-const carregant = computed(() => eventStore.carregant);
-const error = computed(() => eventStore.error || adminStore.error);
-const events = computed(() => eventStore.esdeveniments);
+const form = reactive({
+  id: '' as string,
+  nom: '',
+  data_hora: '',
+  recinte: '',
+  descripcio: '',
+  estat: 'active',
+});
+
+const carregant = computed(() => adminStore.carregant);
+const error = computed(() => adminStore.error);
+const events = computed(() => adminStore.events);
 const adminStats = computed(() => adminStore.stats);
 
 onMounted(async () => {
-  await eventStore.obtenirEsdeveniments();
+  await adminStore.obtenirEvents();
 });
-
-// El adminStore ja crida /api/admin/events/:id/stats correctament
-
-function selectEvent(id: string) {
-  selectedEventId.value = id;
-  informe.value = null;
-}
-
-async function loadStats(id: string) {
-  selectedEventId.value = id;
-  await adminStore.obtenirStats(id);
-  informe.value = null;
-}
-
-async function carregarInforme() {
-  if (!selectedEventId.value) return;
-  informe.value = await adminStore.obtenirInforme(selectedEventId.value);
-}
 
 function formatDate(data: string) {
   return new Date(data).toLocaleDateString('ca-ES', {
@@ -178,324 +149,123 @@ function formatDate(data: string) {
     minute: '2-digit',
   });
 }
+
+function toInputDatetime(value: string) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function toBackendDatetime(value: string) {
+  if (!value) return '';
+  return `${value.replace('T', ' ')}:00`;
+}
+
+function resetForm() {
+  form.id = '';
+  form.nom = '';
+  form.data_hora = '';
+  form.recinte = '';
+  form.descripcio = '';
+  form.estat = 'active';
+}
+
+function editEvent(event: AdminEvent) {
+  form.id = event.id;
+  form.nom = event.nom;
+  form.data_hora = toInputDatetime(event.data_hora);
+  form.recinte = event.recinte;
+  form.descripcio = event.descripcio || '';
+  form.estat = event.estat || 'active';
+}
+
+async function submitForm() {
+  const payload = {
+    nom: form.nom,
+    data_hora: toBackendDatetime(form.data_hora),
+    recinte: form.recinte,
+    descripcio: form.descripcio,
+    estat: form.estat,
+  };
+
+  if (form.id) {
+    await adminStore.actualitzarEvent(form.id, payload);
+  } else {
+    await adminStore.crearEvent(payload);
+  }
+
+  resetForm();
+}
+
+async function loadStats(id: string) {
+  selectedEventId.value = id;
+  informe.value = null;
+  await adminStore.obtenirStats(id);
+}
+
+async function carregarInforme() {
+  if (!selectedEventId.value) return;
+  informe.value = await adminStore.obtenirInforme(selectedEventId.value);
+}
+
+async function deleteEvent(id: string) {
+  if (!confirm('Vols eliminar aquest esdeveniment?')) {
+    return;
+  }
+
+  await adminStore.eliminarEvent(id);
+
+  if (selectedEventId.value === id) {
+    selectedEventId.value = null;
+    informe.value = null;
+  }
+}
 </script>
 
 <style scoped>
-.admin-panel {
-  padding: 1.4rem;
-  max-width: 1400px;
-  margin: 0 auto;
+.admin-panel { padding: 1.4rem; max-width: 1400px; margin: 0 auto; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 2rem; background: linear-gradient(120deg, #0f7b7f, #15a2a8); color: #fff; border-radius: 1.1rem; }
+.admin-content { display: flex; flex-direction: column; gap: 1.2rem; }
+.card { background: rgba(255, 255, 255, 0.9); border-radius: 1rem; box-shadow: 0 16px 28px rgba(21, 34, 49, 0.11); }
+.crud-section, .list-section, .informe-section { padding: 1.2rem; }
+.crud-form { display: flex; flex-direction: column; gap: 0.8rem; }
+.form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; }
+.field { display: flex; flex-direction: column; gap: 0.35rem; }
+.field input, .field textarea, .field select { border: 1px solid #d8e1ea; border-radius: 0.7rem; padding: 0.65rem; }
+.crud-actions { display: flex; gap: 0.7rem; }
+.search-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.event-card { padding: 1rem; border: 1px solid #d8e1ea; border-radius: 1rem; background: linear-gradient(165deg, #ffffff, #fbfdff); }
+.event-date { color: #0f7b7f; font-weight: bold; margin: 0.25rem 0; }
+.event-venue { color: #5a6672; margin-bottom: 0.8rem; }
+.event-actions { display: flex; gap: 0.5rem; }
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.stats-card { padding: 1rem; }
+.seat-stats { display: flex; flex-direction: column; gap: 0.45rem; }
+.stat-row { display: flex; justify-content: space-between; padding: 0.55rem; border-radius: 0.5rem; }
+.stat-row.disponibles { background: #e8f5e9; }
+.stat-row.reservats { background: #fdecef; }
+.stat-row.venuts { background: #e3f2fd; }
+.big-number { font-size: 2rem; color: #0f7b7f; margin: 0.4rem 0; }
+.action-card { padding: 1rem; display: flex; justify-content: center; }
+.informe-table { width: 100%; border-collapse: collapse; }
+.informe-table th, .informe-table td { padding: 0.6rem; border-bottom: 1px solid #e9edf1; }
+.loading, .error-message { padding: 1rem; }
+.error-message { color: #b61d3c; }
+.btn { padding: 0.6rem 1rem; border: none; border-radius: 999px; font-weight: 700; cursor: pointer; }
+.btn-primary { background: linear-gradient(120deg, #ff6b4a, #ff8f58 62%, #ffc857); color: #fff; }
+.btn-secondary { background: transparent; border: 1px solid rgba(255, 255, 255, 0.7); color: #fff; }
+.btn-ghost { background: #e9f6f6; color: #0f7b7f; }
+.btn-danger { background: #fdecef; color: #b23946; }
+
+@media (max-width: 960px) {
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .stats-grid { grid-template-columns: 1fr; }
 }
 
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding: 2rem;
-  background: linear-gradient(120deg, #0f7b7f, #15a2a8);
-  color: #fff;
-  border-radius: 1.1rem;
-  box-shadow: 0 16px 30px rgba(12, 100, 104, 0.3);
-}
-
-.admin-header h1 {
-  margin: 0;
-}
-
-.admin-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.search-section {
-  padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-}
-
-.search-section h2 {
-  margin-bottom: 1rem;
-  color: #1f2a34;
-}
-
-.search-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-.event-card {
-  padding: 1.5rem;
-  border: 1px solid #d8e1ea;
-  border-radius: 1rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: linear-gradient(165deg, #ffffff, #fbfdff);
-}
-
-.event-card:hover {
-  border-color: #0f7b7f;
-  box-shadow: 0 16px 30px rgba(21, 34, 49, 0.14);
-  transform: translateY(-6px);
-}
-
-.event-card h3 {
-  margin: 0 0 0.5rem 0;
-  color: #1f2a34;
-}
-
-.event-date {
-  color: #0f7b7f;
-  font-weight: bold;
-  margin: 0.25rem 0;
-}
-
-.event-venue {
-  color: #5a6672;
-  margin: 0.5rem 0 1rem 0;
-}
-
-.btn-small {
-  width: 100%;
-}
-
-.stats-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-}
-
-.stats-card {
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.86);
-  box-shadow: 0 16px 28px rgba(21, 34, 49, 0.11);
-}
-
-.stats-card h2 {
-  margin-top: 0;
-  color: #1f2a34;
-  border-bottom: 2px solid #e8edf2;
-  padding-bottom: 1rem;
-}
-
-.seat-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-weight: 500;
-}
-
-.stat-row.disponibles {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.stat-row.seleccionats {
-  background: #fff3e0;
-  color: #f57c00;
-}
-
-.stat-row.venuts {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.stat-row.reservats {
-  background: #fdecef;
-  color: #b23946;
-}
-
-.total {
-  padding-top: 1rem;
-  border-top: 2px solid #eee;
-  text-align: center;
-  color: #666;
-}
-
-.occupancy-meter {
-  margin: 1rem 0;
-}
-
-.occupancy-bar {
-  width: 100%;
-  height: 30px;
-  background: #eef3f6;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 2px solid #d3dde6;
-}
-
-.occupancy-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #ff6b4a, #ff8f58, #ffc857);
-  transition: width 0.3s ease;
-}
-
-.occupancy-text {
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #ff6b4a;
-  margin-top: 0.75rem;
-}
-
-.activity-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.activity-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: #f6fafc;
-  border-radius: 6px;
-  font-weight: 500;
-}
-
-.activity-item .value {
-  font-size: 1.5rem;
-  color: #0f7b7f;
-}
-
-.big-number {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #0f7b7f;
-  margin: 0;
-  text-align: center;
-}
-
-.action-card {
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.informe-section {
-  padding: 2rem;
-}
-
-.informe-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 1rem;
-}
-
-.informe-table th,
-.informe-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.informe-table th {
-  background: #f2f6f9;
-  font-weight: bold;
-  color: #1f2a34;
-}
-
-.informe-table tr:hover {
-  background: #fafafa;
-}
-
-.informe-total {
-  padding: 2rem;
-  background: #eef8f8;
-  border-radius: 8px;
-  border-left: 4px solid #0f7b7f;
-}
-
-.informe-total h3 {
-  margin: 0 0 0.5rem 0;
-  color: #1f2a34;
-}
-
-.loading,
-.error-message {
-  text-align: center;
-  padding: 3rem;
-  font-size: 1.1rem;
-  color: #666;
-}
-
-.error-message {
-  color: #e74c3c;
-}
-
-.card {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 1rem;
-  box-shadow: 0 16px 28px rgba(21, 34, 49, 0.11);
-}
-
-.btn {
-  padding: 0.78rem 1.55rem;
-  border: none;
-  border-radius: 999px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-}
-
-.btn-primary {
-  background: linear-gradient(120deg, #ff6b4a, #ff8f58 62%, #ffc857);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  opacity: 0.93;
-}
-
-.btn-secondary {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  color: #fff;
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-@media (max-width: 768px) {
-  .admin-panel {
-    padding: 1rem;
-  }
-
-  .admin-header {
-    padding: 1.2rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.8rem;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
+@media (max-width: 640px) {
+  .admin-panel { padding: 1rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  .crud-actions, .event-actions { flex-direction: column; }
 }
 </style>

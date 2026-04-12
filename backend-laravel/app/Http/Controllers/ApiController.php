@@ -12,6 +12,27 @@ use Illuminate\Support\Facades\Log;
 class ApiController extends Controller
 {
     private const RESERVA_DURADA_MINUTS = 5;
+    private const ADMIN_EMAIL = 'admin@gmail.com';
+
+    private function userRoleByEmail(string $email): string
+    {
+        return strtolower(trim($email)) === self::ADMIN_EMAIL ? 'administrador' : 'comprador';
+    }
+
+    private function ensureAdmin(Request $request): ?JsonResponse
+    {
+        $token = $this->parseToken($request->header('Authorization'));
+
+        if (!$token || !isset($token['id'])) {
+            return response()->json(['error' => 'TOKEN_INVALID', 'missatge' => 'Token invalid o expirat'], 401);
+        }
+
+        if (($token['role'] ?? 'comprador') !== 'administrador') {
+            return response()->json(['error' => 'NO_AUTORITZAT', 'missatge' => 'Acces nomes per administradors'], 403);
+        }
+
+        return null;
+    }
 
     private function syncTicketmasterEvents(): void
     {
@@ -154,11 +175,12 @@ class ApiController extends Controller
     private function makeToken(int $userId, string $email): string
     {
         $secret = (string) env('JWT_SECRET', env('APP_KEY', 'dev-secret'));
+        $role = $this->userRoleByEmail($email);
         $header = $this->base64UrlEncode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']) ?: '{}');
         $payload = $this->base64UrlEncode(json_encode([
             'id' => $userId,
             'email' => $email,
-            'role' => 'comprador',
+            'role' => $role,
             'exp' => now()->addDays(7)->timestamp,
         ]) ?: '{}');
 
@@ -276,6 +298,7 @@ class ApiController extends Controller
         ]);
 
         $token = $this->makeToken((int) $userId, (string) $email);
+        $role = $this->userRoleByEmail((string) $email);
 
         return response()->json([
             'token' => $token,
@@ -283,7 +306,7 @@ class ApiController extends Controller
                 'id' => (string) $userId,
                 'correu_electronic' => $email,
                 'nom' => $name,
-                'rol' => 'comprador',
+                'rol' => $role,
             ],
         ], 201);
     }
@@ -309,6 +332,7 @@ class ApiController extends Controller
         }
 
         $token = $this->makeToken((int) $user->id, (string) $user->email);
+        $role = $this->userRoleByEmail((string) $user->email);
 
         return response()->json([
             'token' => $token,
@@ -316,7 +340,7 @@ class ApiController extends Controller
                 'id' => (string) $user->id,
                 'correu_electronic' => $user->email,
                 'nom' => $user->name,
-                'rol' => 'comprador',
+                'rol' => $role,
             ],
         ]);
     }
@@ -337,7 +361,7 @@ class ApiController extends Controller
             'id' => (string) $user->id,
             'correu_electronic' => $user->email,
             'nom' => $user->name,
-            'rol' => 'comprador',
+            'rol' => $this->userRoleByEmail((string) $user->email),
         ]);
     }
 
@@ -729,8 +753,12 @@ class ApiController extends Controller
         ], 201);
     }
 
-    public function adminEvents(): JsonResponse
+    public function adminEvents(Request $request): JsonResponse
     {
+        if ($auth = $this->ensureAdmin($request)) {
+            return $auth;
+        }
+
         $events = DB::table('events')->orderBy('date_time')->get();
         $zones = DB::table('zones')->get()->groupBy('event_id');
 
@@ -753,8 +781,12 @@ class ApiController extends Controller
         return response()->json(['events' => $mapped]);
     }
 
-    public function adminStats(int $id): JsonResponse
+    public function adminStats(Request $request, int $id): JsonResponse
     {
+        if ($auth = $this->ensureAdmin($request)) {
+            return $auth;
+        }
+
         $seats = $this->getEventSeatsWithStatus($id);
 
         $disponibles = count(array_filter($seats, fn (array $s) => $s['status'] === 'AVAILABLE'));
@@ -795,8 +827,12 @@ class ApiController extends Controller
         ]);
     }
 
-    public function adminReport(int $id): JsonResponse
+    public function adminReport(Request $request, int $id): JsonResponse
     {
+        if ($auth = $this->ensureAdmin($request)) {
+            return $auth;
+        }
+
         $items = DB::table('purchase_items as pi')
             ->join('purchases as p', 'p.id', '=', 'pi.purchase_id')
             ->select('pi.zone_name', 'pi.price')
@@ -834,6 +870,10 @@ class ApiController extends Controller
 
     public function adminCreateEvent(Request $request): JsonResponse
     {
+        if ($auth = $this->ensureAdmin($request)) {
+            return $auth;
+        }
+
         $nom = $request->input('nom');
         $dataHora = $request->input('data_hora');
         $recinte = $request->input('recinte');
@@ -895,6 +935,74 @@ class ApiController extends Controller
                 'nom' => $nom,
             ],
         ], 201);
+    }
+
+    public function adminUpdateEvent(Request $request, int $id): JsonResponse
+    {
+        if ($auth = $this->ensureAdmin($request)) {
+            return $auth;
+        }
+
+        $event = DB::table('events')->where('id', $id)->first();
+        if (!$event) {
+            return response()->json(['error' => 'EVENT_NO_TROBAT'], 404);
+        }
+
+        $nom = $request->input('nom', $event->name);
+        $dataHora = $request->input('data_hora', $event->date_time);
+        $recinte = $request->input('recinte', $event->venue);
+        $descripcio = $request->input('descripcio', $event->description ?? '');
+        $estat = $request->input('estat', $event->status ?? 'active');
+
+        DB::table('events')->where('id', $id)->update([
+            'name' => $nom,
+            'date_time' => $dataHora,
+            'venue' => $recinte,
+            'description' => $descripcio,
+            'status' => $estat,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'event' => [
+                'id' => $id,
+                'nom' => $nom,
+                'data_hora' => $dataHora,
+                'recinte' => $recinte,
+                'descripcio' => $descripcio,
+                'estat' => $estat,
+            ],
+        ]);
+    }
+
+    public function adminDeleteEvent(Request $request, int $id): JsonResponse
+    {
+        if ($auth = $this->ensureAdmin($request)) {
+            return $auth;
+        }
+
+        $event = DB::table('events')->where('id', $id)->first();
+        if (!$event) {
+            return response()->json(['error' => 'EVENT_NO_TROBAT'], 404);
+        }
+
+        DB::transaction(function () use ($id) {
+            DB::table('purchase_items')->whereIn('purchase_id', function ($q) use ($id) {
+                $q->select('id')->from('purchases')->where('event_id', $id);
+            })->delete();
+
+            DB::table('purchases')->where('event_id', $id)->delete();
+
+            DB::table('reservations')->where('event_id', $id)->delete();
+
+            DB::table('seats')->where('event_id', $id)->delete();
+
+            DB::table('zones')->where('event_id', $id)->delete();
+
+            DB::table('events')->where('id', $id)->delete();
+        });
+
+        return response()->json(['missatge' => 'Esdeveniment eliminat']);
     }
 
     public function desenvolupaments(): JsonResponse

@@ -16,6 +16,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        DB::table('users')->updateOrInsert(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Admin',
+                'password' => 'admin12345aA!',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
         $exists = DB::table('users')->where('email', 'test@example.com')->exists();
         if (!$exists) {
             User::factory()->create([

@@ -12,7 +12,7 @@
       <div class="nav-links">
         <NuxtLink to="/events">Esdeveniments</NuxtLink>
         <NuxtLink to="/account">Compte</NuxtLink>
-        <NuxtLink to="/admin">Admin</NuxtLink>
+        <NuxtLink v-if="isAdmin" to="/admin">Admin</NuxtLink>
         <button @click="logout" class="logout-btn">Sortir</button>
       </div>
     </nav>
@@ -22,12 +22,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '~/stores/authStore';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const ADMIN_EMAIL = 'admin@gmail.com';
+
+const isAdmin = computed(() => {
+  const user = authStore.usuari;
+  if (!user) {
+    return false;
+  }
+
+  return user.rol === 'administrador' && user.correu_electronic.toLowerCase() === ADMIN_EMAIL;
+});
 
 onMounted(() => {
   authStore.init();

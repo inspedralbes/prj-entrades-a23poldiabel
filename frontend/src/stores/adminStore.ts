@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useRuntimeConfig } from '#app';
+import { apiClient } from '~/services/apiClient';
 
 export interface AdminStats {
   seients: {
@@ -16,27 +16,41 @@ export interface AdminStats {
   recaptacio_total: number;
 }
 
+export interface AdminEvent {
+  id: string;
+  nom: string;
+  data_hora: string;
+  recinte: string;
+  descripcio?: string;
+  estat?: string;
+  zones?: Array<{ id: string; nom: string; preu: number }>;
+}
+
 export const useAdminStore = defineStore('admin', () => {
   const stats = ref<AdminStats | null>(null);
+  const events = ref<AdminEvent[]>([]);
   const carregant = ref(false);
   const error = ref<string | null>(null);
   const connectedUsers = ref(0);
 
-  function getApiBaseUrl() {
-    const config = useRuntimeConfig();
-    const base = (config.public.apiUrl || 'http://localhost:3000').replace(/\/$/, '');
-    return base.endsWith('/api') ? base.slice(0, -4) : base;
+  async function obtenirEvents() {
+    carregant.value = true;
+    error.value = null;
+    try {
+      const resposta = await apiClient.get<{ events: AdminEvent[] }>('/admin/events');
+      events.value = resposta.events || [];
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error desconegut';
+    } finally {
+      carregant.value = false;
+    }
   }
 
   async function obtenirStats(eventId: string) {
     carregant.value = true;
     error.value = null;
     try {
-      const resposta = await fetch(`${getApiBaseUrl()}/api/admin/events/${eventId}/stats`);
-      if (!resposta.ok) {
-        throw new Error('Error en obtenir estadístiques');
-      }
-      const dades = await resposta.json();
+      const dades = await apiClient.get<{ stats: AdminStats }>(`/admin/events/${eventId}/stats`);
       stats.value = dades.stats;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error desconegut';
@@ -47,14 +61,71 @@ export const useAdminStore = defineStore('admin', () => {
 
   async function obtenirInforme(eventId: string) {
     try {
-      const resposta = await fetch(`${getApiBaseUrl()}/api/admin/events/${eventId}/report`);
-      if (!resposta.ok) {
-        throw new Error('Error en obtenir informe');
-      }
-      return await resposta.json();
+      return await apiClient.get(`/admin/events/${eventId}/report`);
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error desconegut';
       return null;
+    }
+  }
+
+  async function crearEvent(payload: {
+    nom: string;
+    data_hora: string;
+    recinte: string;
+    descripcio?: string;
+  }) {
+    carregant.value = true;
+    error.value = null;
+    try {
+      await apiClient.post('/admin/events', {
+        ...payload,
+        zones: [
+          { nom: 'General', preu: 35, color: 'rgba(33,150,243,0.8)', files: 5, seientsPerFila: 12 },
+        ],
+      });
+      await obtenirEvents();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error desconegut';
+      throw e;
+    } finally {
+      carregant.value = false;
+    }
+  }
+
+  async function actualitzarEvent(eventId: string, payload: {
+    nom: string;
+    data_hora: string;
+    recinte: string;
+    descripcio?: string;
+    estat?: string;
+  }) {
+    carregant.value = true;
+    error.value = null;
+    try {
+      await apiClient.put(`/admin/events/${eventId}`, payload);
+      await obtenirEvents();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error desconegut';
+      throw e;
+    } finally {
+      carregant.value = false;
+    }
+  }
+
+  async function eliminarEvent(eventId: string) {
+    carregant.value = true;
+    error.value = null;
+    try {
+      await apiClient.delete(`/admin/events/${eventId}`);
+      await obtenirEvents();
+      if (stats.value) {
+        stats.value = null;
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error desconegut';
+      throw e;
+    } finally {
+      carregant.value = false;
     }
   }
 
@@ -71,11 +142,16 @@ export const useAdminStore = defineStore('admin', () => {
 
   return {
     stats,
+    events,
     carregant,
     error,
     connectedUsers,
+    obtenirEvents,
     obtenirStats,
     obtenirInforme,
+    crearEvent,
+    actualitzarEvent,
+    eliminarEvent,
     actualitzarStats,
     clearStats,
   };
