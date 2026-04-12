@@ -337,8 +337,21 @@ class ApiController extends Controller
             ], 401);
         }
 
-        $isValidPassword = Hash::check($password, (string) $user->password);
-        if (!$isValidPassword && hash_equals((string) $user->password, (string) $password)) {
+        $storedPassword = (string) $user->password;
+        $isValidPassword = false;
+
+        // Legacy rows may still contain plaintext or non-bcrypt values.
+        // Guard Hash::check to avoid 500 and keep the upgrade-on-login path.
+        try {
+            $isValidPassword = Hash::check($password, $storedPassword);
+        } catch (\Throwable $e) {
+            Log::warning('Password hash format not supported for user', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            $isValidPassword = false;
+        }
+        if (!$isValidPassword && hash_equals($storedPassword, (string) $password)) {
             DB::table('users')->where('id', $user->id)->update([
                 'password' => Hash::make($password),
                 'updated_at' => now(),
