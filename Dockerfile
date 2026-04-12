@@ -13,7 +13,8 @@ COPY frontend/package*.json ./frontend/
 WORKDIR /app/frontend
 RUN npm install
 COPY frontend/ ./
-EXPOSE 5173
+RUN npm run build
+EXPOSE 3001
 
 FROM mirror.gcr.io/library/php:8.4-cli-alpine AS laravel
 WORKDIR /app/backend-laravel

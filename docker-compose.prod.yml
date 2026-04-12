@@ -45,6 +45,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8000/api/events >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   sockets:
     build:
@@ -77,7 +83,7 @@ services:
     container_name: entrades-frontend-prod
     restart: unless-stopped
     working_dir: /app/frontend
-    command: sh -c "npm run build && NITRO_HOST=0.0.0.0 NITRO_PORT=3001 node .output/server/index.mjs"
+    command: sh -c "NITRO_HOST=0.0.0.0 NITRO_PORT=3001 node .output/server/index.mjs"
     environment:
       NODE_ENV: production
       NUXT_PUBLIC_API_URL: https://${DOMAIN}/api
@@ -85,6 +91,12 @@ services:
     depends_on:
       - api
       - sockets
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3001/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
 
   nginx:
     image: nginx:1.27-alpine
@@ -98,9 +110,12 @@ services:
       - certbot_www:/var/www/certbot
       - certbot_certs:/etc/letsencrypt
     depends_on:
-      - frontend
-      - api
-      - sockets
+      frontend:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      sockets:
+        condition: service_started
 
   certbot:
     image: certbot/certbot:latest

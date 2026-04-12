@@ -185,4 +185,29 @@ while [ "$attempt" -le "$max_attempts" ]; do
   sleep 2
 done
 
+echo "Comprobando salud de frontend y API a traves de Nginx interno..."
+attempt=1
+max_attempts=30
+while [ "$attempt" -le "$max_attempts" ]; do
+  if $COMPOSE exec -T nginx sh -lc 'wget -q -O - --timeout=5 http://127.0.0.1/ >/dev/null 2>&1' \
+    && $COMPOSE exec -T nginx sh -lc 'wget -q -O - --timeout=5 http://127.0.0.1/api/events >/dev/null 2>&1'; then
+    break
+  fi
+
+  if [ "$attempt" -eq "$max_attempts" ]; then
+    echo "ERROR: frontend/API no responden correctamente tras deploy"
+    echo "--- logs frontend (tail 120) ---"
+    $COMPOSE logs --tail=120 frontend || true
+    echo "--- logs api (tail 120) ---"
+    $COMPOSE logs --tail=120 api || true
+    echo "--- logs nginx (tail 120) ---"
+    $COMPOSE logs --tail=120 nginx || true
+    exit 1
+  fi
+
+  echo "Esperando readiness frontend/API (intento $attempt/$max_attempts)..."
+  attempt=$((attempt + 1))
+  sleep 2
+done
+
 echo "Deploy de produccion completado para https://$DOMAIN"
