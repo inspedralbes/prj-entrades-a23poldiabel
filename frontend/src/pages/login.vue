@@ -8,7 +8,7 @@
           <label for="email">Correu electrònic</label>
           <input
             id="email"
-            v-model="email"
+            v-model="emaill"
             type="email"
             required
             placeholder="exemple@correu.com"
