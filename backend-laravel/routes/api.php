@@ -13,6 +13,7 @@ Route::get('/seients/{eventId}', [ApiController::class, 'seients']);
 Route::get('/zones', [ApiController::class, 'zones']);
 
 Route::get('/entrades/usuari', [ApiController::class, 'entradesUsuari']);
+Route::get('/entrades/correu', [ApiController::class, 'entradesPerCorreu']);
 Route::get('/reserves/usuari', [ApiController::class, 'reservesUsuari']);
 Route::delete('/reserves/{id}', [ApiController::class, 'deleteReserva']);
 Route::post('/compres', [ApiController::class, 'compres']);

@@ -30,7 +30,7 @@ services:
       target: laravel
     container_name: entrades-api
     working_dir: /app/backend-laravel
-    command: sh -c "php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "php artisan serve --host=0.0.0.0 --port=8000"
     ports:
       - "8000:8000"
     environment:

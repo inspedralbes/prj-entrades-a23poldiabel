@@ -28,7 +28,6 @@ import { useAuthStore } from '~/stores/authStore';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const ADMIN_EMAIL = 'admin@gmail.com';
 
 const isAdmin = computed(() => {
   const user = authStore.usuari;
@@ -36,7 +35,7 @@ const isAdmin = computed(() => {
     return false;
   }
 
-  return user.rol === 'administrador' && user.correu_electronic.toLowerCase() === ADMIN_EMAIL;
+  return user.rol === 'administrador';
 });
 
 onMounted(() => {

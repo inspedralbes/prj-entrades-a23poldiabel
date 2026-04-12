@@ -6,17 +6,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
     private const RESERVA_DURADA_MINUTS = 5;
-    private const ADMIN_EMAIL = 'admin@gmail.com';
 
-    private function userRoleByEmail(string $email): string
+    private function normalizeRole(?string $role): string
     {
-        return strtolower(trim($email)) === self::ADMIN_EMAIL ? 'administrador' : 'comprador';
+        return $role === 'administrador' ? 'administrador' : 'comprador';
     }
 
     private function ensureAdmin(Request $request): ?JsonResponse
@@ -172,10 +172,9 @@ class ApiController extends Controller
         }
     }
 
-    private function makeToken(int $userId, string $email): string
+    private function makeToken(int $userId, string $email, string $role): string
     {
         $secret = (string) env('JWT_SECRET', env('APP_KEY', 'dev-secret'));
-        $role = $this->userRoleByEmail($email);
         $header = $this->base64UrlEncode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']) ?: '{}');
         $payload = $this->base64UrlEncode(json_encode([
             'id' => $userId,
@@ -291,14 +290,15 @@ class ApiController extends Controller
 
         $userId = DB::table('users')->insertGetId([
             'email' => $email,
-            'password' => $password,
+            'password' => Hash::make($password),
+            'role' => 'comprador',
             'name' => $name,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        $token = $this->makeToken((int) $userId, (string) $email);
-        $role = $this->userRoleByEmail((string) $email);
+        $role = 'comprador';
+        $token = $this->makeToken((int) $userId, (string) $email, $role);
 
         return response()->json([
             'token' => $token,
@@ -324,15 +324,32 @@ class ApiController extends Controller
         }
 
         $user = DB::table('users')->where('email', $email)->first();
-        if (!$user || $user->password !== $password) {
+        if (!$user) {
             return response()->json([
                 'error' => 'CREDENCIALS_INCORRECTES',
                 'missatge' => 'Credencials incorrectes',
             ], 401);
         }
 
-        $token = $this->makeToken((int) $user->id, (string) $user->email);
-        $role = $this->userRoleByEmail((string) $user->email);
+        $isValidPassword = Hash::check($password, (string) $user->password);
+        if (!$isValidPassword && hash_equals((string) $user->password, (string) $password)) {
+            DB::table('users')->where('id', $user->id)->update([
+                'password' => Hash::make($password),
+                'updated_at' => now(),
+            ]);
+            $isValidPassword = true;
+            $user = DB::table('users')->where('id', $user->id)->first();
+        }
+
+        if (!$isValidPassword) {
+            return response()->json([
+                'error' => 'CREDENCIALS_INCORRECTES',
+                'missatge' => 'Credencials incorrectes',
+            ], 401);
+        }
+
+        $role = $this->normalizeRole($user->role ?? null);
+        $token = $this->makeToken((int) $user->id, (string) $user->email, $role);
 
         return response()->json([
             'token' => $token,
@@ -361,8 +378,63 @@ class ApiController extends Controller
             'id' => (string) $user->id,
             'correu_electronic' => $user->email,
             'nom' => $user->name,
-            'rol' => $this->userRoleByEmail((string) $user->email),
+            'rol' => $this->normalizeRole($user->role ?? null),
         ]);
+    }
+
+    public function entradesPerCorreu(Request $request): JsonResponse
+    {
+        $email = (string) $request->query('correu', $request->query('email', ''));
+        if ($email === '') {
+            return response()->json(['error' => 'CORREU_OBLIGATORI', 'missatge' => 'Cal indicar un correu electronic'], 400);
+        }
+
+        $user = DB::table('users')->where('email', $email)->first();
+        if (!$user) {
+            return response()->json(['entrades' => []]);
+        }
+
+        $purchases = DB::table('purchases as p')
+            ->join('events as e', 'e.id', '=', 'p.event_id')
+            ->select('p.id', 'p.created_at', 'p.completed_at', 'e.name', 'e.date_time', 'e.venue')
+            ->where('p.user_id', $user->id)
+            ->where('p.status', 'COMPLETED')
+            ->orderByDesc('p.created_at')
+            ->get();
+
+        $purchaseIds = $purchases->pluck('id')->all();
+
+        $itemsByPurchase = DB::table('purchase_items as pi')
+            ->join('seats as s', 's.id', '=', 'pi.seat_id')
+            ->select('pi.purchase_id', 'pi.seat_id', 'pi.zone_name', 's.row', 's.seat_number')
+            ->whereIn('pi.purchase_id', $purchaseIds ?: [0])
+            ->get()
+            ->groupBy('purchase_id');
+
+        $entrades = $purchases->map(function (object $purchase) use ($itemsByPurchase) {
+            $items = $itemsByPurchase->get($purchase->id, collect())->map(function (object $item) {
+                return [
+                    'id' => (string) $item->seat_id,
+                    'numero' => (string) $item->seat_number,
+                    'fila' => $item->row,
+                    'zona' => $item->zone_name,
+                ];
+            })->values()->all();
+
+            return [
+                'id' => (string) $purchase->id,
+                'codi_entrada' => 'ENT-'.str_pad((string) $purchase->id, 6, '0', STR_PAD_LEFT),
+                'data_compra' => $purchase->completed_at ?: $purchase->created_at,
+                'esdeveniment' => [
+                    'nom' => $purchase->name,
+                    'data_hora' => $purchase->date_time,
+                    'recinte' => $purchase->venue,
+                ],
+                'seients' => $items,
+            ];
+        })->values()->all();
+
+        return response()->json(['entrades' => $entrades]);
     }
 
     public function events(): JsonResponse

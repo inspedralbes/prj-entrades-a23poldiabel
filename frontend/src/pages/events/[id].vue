@@ -383,8 +383,7 @@ function reservarSeient(seientId: string) {
   }
 
   const eventId = route.params.id as string;
-  const usuariId = authStore.usuari?.id;
-  reserveSeat(seientId, eventId, reservaActiva.value?.token, usuariId);
+  reserveSeat(seientId, eventId, reservaActiva.value?.token);
 }
 
 async function cancelarReserva() {

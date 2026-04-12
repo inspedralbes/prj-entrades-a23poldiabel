@@ -64,6 +64,12 @@
       <section v-if="selectedEventId && adminStats" class="stats-section">
         <div class="stats-grid">
           <div class="card stats-card">
+            <h2>Temps real</h2>
+            <p class="big-number">{{ connectedUsers }}</p>
+            <p>usuaris connectats</p>
+          </div>
+
+          <div class="card stats-card">
             <h2>Distribució de Seients</h2>
             <div class="seat-stats">
               <div class="stat-row disponibles"><span>Disponibles</span><span>{{ adminStats.seients.disponibles }}</span></div>
@@ -110,15 +116,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import type { AdminEvent } from '~/stores/adminStore';
 import { useAdminStore } from '~/stores/adminStore';
+import { useSocketClient } from '~/services/socketClient';
 
 definePageMeta({
   middleware: ['auth', 'admin'],
 });
 
 const adminStore = useAdminStore();
+const { connect, disconnect, joinEvent, leaveEvent, on, off } = useSocketClient();
 const selectedEventId = ref<string | null>(null);
 const informe = ref<any>(null);
 
@@ -135,9 +143,49 @@ const carregant = computed(() => adminStore.carregant);
 const error = computed(() => adminStore.error);
 const events = computed(() => adminStore.events);
 const adminStats = computed(() => adminStore.stats);
+const connectedUsers = computed(() => adminStore.connectedUsers);
 
 onMounted(async () => {
   await adminStore.obtenirEvents();
+
+  connect();
+  on('user-joined', (data: any) => {
+    adminStore.connectedUsers = Number(data?.userCount || 0);
+  });
+
+  const refreshStats = async () => {
+    if (!selectedEventId.value) {
+      return;
+    }
+    await adminStore.obtenirStats(selectedEventId.value);
+  };
+
+  on('seat-reserved', refreshStats);
+  on('seat-released', refreshStats);
+  on('seat-sold', refreshStats);
+  on('reservations-expired', refreshStats);
+});
+
+onUnmounted(() => {
+  if (selectedEventId.value) {
+    leaveEvent(selectedEventId.value);
+  }
+
+  off('user-joined');
+  off('seat-reserved');
+  off('seat-released');
+  off('seat-sold');
+  off('reservations-expired');
+  disconnect();
+});
+
+watch(selectedEventId, (newId, oldId) => {
+  if (oldId) {
+    leaveEvent(oldId);
+  }
+  if (newId) {
+    joinEvent(newId);
+  }
 });
 
 function formatDate(data: string) {

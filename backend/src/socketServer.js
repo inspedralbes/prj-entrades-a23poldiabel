@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { connectDatabase } from './config/database.js';
@@ -14,6 +15,7 @@ dotenv.config();
 
 const SOCKET_PORT = parseInt(process.env.SOCKET_PORT || process.env.PORT || '3000', 10);
 const MAX_SEATS_PER_RESERVATION = parseInt(process.env.MAX_SEIENTS_PER_RESERVA || '6', 10);
+const JWT_SECRET = process.env.JWT_SECRET || process.env.APP_KEY || 'dev-secret';
 const corsOrigins = (process.env.SOCKET_CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
@@ -28,6 +30,82 @@ const io = new SocketIOServer(httpServer, {
 });
 
 const userSessions = new Map();
+const actionWindow = new Map();
+
+function base64UrlEncode(buffer) {
+  return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlDecode(payload) {
+  const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = normalized.length % 4;
+  const withPadding = padding === 0 ? normalized : normalized + '='.repeat(4 - padding);
+  return Buffer.from(withPadding, 'base64').toString('utf8');
+}
+
+function verifyToken(rawToken) {
+  if (!rawToken || typeof rawToken !== 'string') {
+    return null;
+  }
+
+  const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const [header, payload, signature] = parts;
+  const expected = base64UrlEncode(
+    crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${payload}`).digest()
+  );
+
+  if (expected !== signature) {
+    return null;
+  }
+
+  try {
+    const data = JSON.parse(base64UrlDecode(payload));
+    if (!data?.id) {
+      return null;
+    }
+    if (data.exp && Number(data.exp) < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    return {
+      id: Number(data.id),
+      role: data.role || 'comprador',
+      email: data.email || '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getUserFromSocket(socket, data) {
+  const token =
+    data?.token
+    || socket.handshake?.auth?.token
+    || socket.handshake?.headers?.authorization
+    || null;
+
+  return verifyToken(token);
+}
+
+function isRateLimited(userId, action, limit, windowMs) {
+  const now = Date.now();
+  const key = `${userId}:${action}`;
+  const timestamps = actionWindow.get(key) || [];
+  const fresh = timestamps.filter((t) => now - t < windowMs);
+
+  if (fresh.length >= limit) {
+    actionWindow.set(key, fresh);
+    return true;
+  }
+
+  fresh.push(now);
+  actionWindow.set(key, fresh);
+  return false;
+}
 
 function mapSeatStatus(status) {
   switch (status) {
@@ -50,16 +128,25 @@ async function bootstrap() {
 
     socket.on('join-event', async (data) => {
       const eventId = data?.eventId || data?.esdeveniment_id;
-      const userId = Number(data?.userId || data?.usuari_id) || null;
+      const user = getUserFromSocket(socket, data);
 
       if (!eventId) {
         socket.emit('error', { message: 'eventId es obligatori' });
         return;
       }
 
+      if (!user?.id) {
+        socket.emit('auth-error', {
+          error: 'NO_AUTENTICAT',
+          missatge: 'Cal iniciar sessio per accedir al temps real',
+        });
+        return;
+      }
+
       socket.join(`event-${eventId}`);
       userSessions.set(socket.id, {
-        userId,
+        userId: user.id,
+        role: user.role,
         eventId: String(eventId),
         seatIds: [],
       });
@@ -105,10 +192,26 @@ async function bootstrap() {
     socket.on('reserve-seat', async (data) => {
       const seatId = parseInt(String(data?.seient_id || data?.seatId || 0), 10);
       const eventId = parseInt(String(data?.esdeveniment_id || data?.eventId || 0), 10);
-      const userId = parseInt(String(data?.usuari_id || data?.userId || 1), 10) || 1;
+      const session = userSessions.get(socket.id);
+      const userId = Number(session?.userId || 0);
 
       try {
-        const session = userSessions.get(socket.id);
+        if (!session || !userId || String(session.eventId) !== String(eventId)) {
+          socket.emit('auth-error', {
+            error: 'NO_AUTENTICAT',
+            missatge: 'Sessio de temps real invalida o caducada',
+          });
+          return;
+        }
+
+        if (isRateLimited(userId, 'reserve-seat', 20, 10000)) {
+          socket.emit('reservation-error', {
+            error: 'MASSA_SOL_LICITUDS',
+            missatge: 'Massa intents de reserva. Torna-ho a provar en uns segons.',
+          });
+          return;
+        }
+
         if (session && session.seatIds.length >= MAX_SEATS_PER_RESERVATION) {
           socket.emit('reservation-error', {
             error: 'MAX_SEIENTS_ASSOLIT',
@@ -171,9 +274,26 @@ async function bootstrap() {
     socket.on('select-seat', async (data) => {
       const seatId = parseInt(String(data?.seatId || 0), 10);
       const eventId = parseInt(String(data?.eventId || 0), 10);
-      const userId = parseInt(String(data?.userId || 1), 10) || 1;
+      const session = userSessions.get(socket.id);
+      const userId = Number(session?.userId || 0);
 
       try {
+        if (!session || !userId || String(session.eventId) !== String(eventId)) {
+          socket.emit('auth-error', {
+            error: 'NO_AUTENTICAT',
+            missatge: 'Sessio de temps real invalida o caducada',
+          });
+          return;
+        }
+
+        if (isRateLimited(userId, 'select-seat', 20, 10000)) {
+          socket.emit('reservation-failed', {
+            seatId,
+            message: 'Massa intents seguits. Torna-ho a provar en uns segons.',
+          });
+          return;
+        }
+
         const result = await attemptSeatReservation(userId, eventId, seatId);
         if (result.success) {
           socket.emit('reservation-confirmed', {
@@ -206,9 +326,26 @@ async function bootstrap() {
     socket.on('release-seat', async (data) => {
       const seatId = parseInt(String(data?.seatId || data?.seient_id || 0), 10);
       const eventId = parseInt(String(data?.eventId || data?.esdeveniment_id || 0), 10);
-      const userId = parseInt(String(data?.userId || data?.usuari_id || 1), 10) || 1;
+      const session = userSessions.get(socket.id);
+      const userId = Number(session?.userId || 0);
 
       try {
+        if (!session || !userId || String(session.eventId) !== String(eventId)) {
+          socket.emit('auth-error', {
+            error: 'NO_AUTENTICAT',
+            missatge: 'Sessio de temps real invalida o caducada',
+          });
+          return;
+        }
+
+        if (isRateLimited(userId, 'release-seat', 25, 10000)) {
+          socket.emit('reservation-error', {
+            error: 'MASSA_SOL_LICITUDS',
+            missatge: 'Massa intents d\'alliberament. Torna-ho a provar en uns segons.',
+          });
+          return;
+        }
+
         const success = await releaseSeatReservation(seatId, userId);
         if (success) {
           const session = userSessions.get(socket.id);
@@ -234,9 +371,26 @@ async function bootstrap() {
     socket.on('purchase-confirm', async (data) => {
       const seatId = parseInt(String(data?.seatId || data?.seient_id || 0), 10);
       const eventId = parseInt(String(data?.eventId || data?.esdeveniment_id || 0), 10);
-      const userId = parseInt(String(data?.userId || data?.usuari_id || 1), 10) || 1;
+      const session = userSessions.get(socket.id);
+      const userId = Number(session?.userId || 0);
 
       try {
+        if (!session || !userId || String(session.eventId) !== String(eventId)) {
+          socket.emit('auth-error', {
+            error: 'NO_AUTENTICAT',
+            missatge: 'Sessio de temps real invalida o caducada',
+          });
+          return;
+        }
+
+        if (isRateLimited(userId, 'purchase-confirm', 10, 10000)) {
+          socket.emit('purchase-failed', {
+            seatId,
+            message: 'Massa intents de compra. Torna-ho a provar en uns segons.',
+          });
+          return;
+        }
+
         const result = await confirmSeatPurchase(seatId, userId);
         if (!result.success) {
           socket.emit('purchase-failed', { seatId, message: result.message });
@@ -274,7 +428,23 @@ async function bootstrap() {
       }
 
       try {
-        const userId = session.userId || 1;
+        const userId = Number(session.userId || 0);
+        if (!userId) {
+          socket.emit('reservation-error', {
+            error: 'NO_AUTENTICAT',
+            missatge: 'Sessio de temps real invalida o caducada',
+          });
+          return;
+        }
+
+        if (isRateLimited(userId, 'confirm-purchase', 10, 10000)) {
+          socket.emit('reservation-error', {
+            error: 'MASSA_SOL_LICITUDS',
+            missatge: 'Massa intents de compra. Torna-ho a provar en uns segons.',
+          });
+          return;
+        }
+
         for (const seatId of [...session.seatIds]) {
           const result = await confirmSeatPurchase(seatId, userId);
           if (result.success) {
@@ -304,7 +474,11 @@ async function bootstrap() {
         return;
       }
 
-      const userId = session.userId || 1;
+      const userId = Number(session.userId || 0);
+      if (!userId) {
+        userSessions.delete(socket.id);
+        return;
+      }
       for (const seatId of session.seatIds) {
         try {
           const released = await releaseSeatReservation(seatId, userId);

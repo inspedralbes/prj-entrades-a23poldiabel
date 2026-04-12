@@ -1,11 +1,21 @@
 import { io, Socket } from 'socket.io-client';
 import { ref } from 'vue';
+import { useCookie } from '#app';
 
 class SocketClient {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<(data: unknown) => void>> = new Map();
 
   public connectat = ref(false);
+
+  private getAuthToken() {
+    try {
+      const token = useCookie<string | null>('auth_token');
+      return token.value || null;
+    } catch {
+      return null;
+    }
+  }
 
   private getSocketUrl() {
     try {
@@ -37,6 +47,9 @@ class SocketClient {
     
     this.socket = io(this.getSocketUrl(), {
       transports: ['websocket', 'polling'],
+      auth: {
+        token: this.getAuthToken(),
+      },
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
@@ -71,28 +84,40 @@ class SocketClient {
   }
 
   joinEvent(esdevenimentId: string) {
-    this.socket?.emit('join-event', { esdeveniment_id: esdevenimentId });
+    this.socket?.emit('join-event', {
+      esdeveniment_id: esdevenimentId,
+      token: this.getAuthToken(),
+    });
   }
 
   leaveEvent(esdevenimentId: string) {
     this.socket?.emit('leave-event', { esdeveniment_id: esdevenimentId });
   }
 
-  reserveSeat(seientId: string, esdevenimentId: string, reservaToken?: string, usuariId?: string) {
+  reserveSeat(seientId: string, esdevenimentId: string, reservaToken?: string) {
     this.socket?.emit('reserve-seat', { 
       seient_id: seientId, 
       esdeveniment_id: esdevenimentId,
       reserva_token: reservaToken,
-      usuari_id: usuariId
+      token: this.getAuthToken(),
     });
   }
 
   releaseSeat(seientId: string, esdevenimentId: string) {
-    this.socket?.emit('release-seat', { seient_id: seientId, esdeveniment_id: esdevenimentId });
+    this.socket?.emit('release-seat', {
+      seient_id: seientId,
+      esdeveniment_id: esdevenimentId,
+      token: this.getAuthToken(),
+    });
   }
 
   confirmPurchase(reservaToken: string, usuari: { nom: string; correu: string }, esdevenimentId: string) {
-    this.socket?.emit('confirm-purchase', { reserva_token: reservaToken, usuari, esdeveniment_id: esdevenimentId });
+    this.socket?.emit('confirm-purchase', {
+      reserva_token: reservaToken,
+      usuari,
+      esdeveniment_id: esdevenimentId,
+      token: this.getAuthToken(),
+    });
   }
 
   on(event: string, callback: (data: unknown) => void) {
@@ -126,8 +151,8 @@ export function useSocketClient() {
     disconnect: () => socketClient.disconnect(),
     joinEvent: (id: string) => socketClient.joinEvent(id),
     leaveEvent: (id: string) => socketClient.leaveEvent(id),
-    reserveSeat: (seientId: string, esdevenimentId: string, reservaToken?: string, usuariId?: string) => 
-      socketClient.reserveSeat(seientId, esdevenimentId, reservaToken, usuariId),
+    reserveSeat: (seientId: string, esdevenimentId: string, reservaToken?: string) => 
+      socketClient.reserveSeat(seientId, esdevenimentId, reservaToken),
     releaseSeat: (seientId: string, esdevenimentId: string) => 
       socketClient.releaseSeat(seientId, esdevenimentId),
     confirmPurchase: (reservaToken: string, usuari: { nom: string; correu: string }, esdevenimentId: string) => 

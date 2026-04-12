@@ -2,7 +2,7 @@
 
 ## 📋 Descripció del Projecte
 
-Sistema complert de venda d'entrades per a concerts, festivals i events d'alta demanda. Implementat amb **Socket.io** per a sincronització en temps real, suportant múltiples usuaris simultanis que competeixen per seients.
+Sistema complet de venda d'entrades per a concerts, festivals i esdeveniments d'alta demanda. Implementat amb **Socket.io** per a sincronització en temps real, suportant múltiples usuaris simultanis que competeixen per seients.
 
 **Tecnologies**: Laravel 13 (API REST), Node.js 22 + Socket.IO (temps real), Vue 3.4+, Nuxt 3, TypeScript 5.0+, PostgreSQL
 
@@ -11,7 +11,7 @@ Sistema complert de venda d'entrades per a concerts, festivals i events d'alta d
 ## ✨ Funcionalitats Principals
 
 ### 👥 Part Usuari
-- ✅ **Visualitzar events**: Informació completa (nom, data/hora, recinte, descripció, zones, preus)
+- ✅ **Visualitzar esdeveniments**: Informació completa (nom, data/hora, recinte, descripció, zones, preus)
 - ✅ **Mapa de seients en temps real**: Estat actualitzat contínuament (disponible, seleccionat, venut, reservat)
 - ✅ **Reserva temporal**: Bloquejar seients per 5 minuts mentre es completa la compra
 - ✅ **Procés de compra**: Dades personals + confirmació
@@ -20,11 +20,11 @@ Sistema complert de venda d'entrades per a concerts, festivals i events d'alta d
 
 ### 👨‍💼 Part Administrativa
 - ✅ **Gestió d'events**: Crear i editar events, zones, seients
-- ✅ **Panell en tiempo real**: Distribució de seients, ocupació, reserves actives, compres
+- ✅ **Panell en temps real**: Distribució de seients, ocupació, reserves actives, compres
 - ✅ **Informes**: Recaptació per zona, total i entrades venudes
 
 ### 🔐 Seguretat & Robustesa
-- ✅ **Transaccions de BD**: Locks UPDATE per evitar race conditions
+- ✅ **Transaccions de BD**: bloquejos `FOR UPDATE` per evitar condicions de cursa
 - ✅ **Validació al servidor**: El client mai força l'estat dels seients
 - ✅ **Expiració automàtica**: Reserva alliberada si no es confirma en 5 minuts
 - ✅ **Notificacions Socket.io**: Sincronització instantània entre tots els clients
@@ -74,8 +74,8 @@ npm run test:e2e
 Verifica:
 - ✅ Dos usuaris compiten pel mateix seient → un ganador, un error
 - ✅ Temps de resposta < 500ms
-- ✅ Fluxo complet: reserva → countdown → compra → entrades
-- ✅ Expiració de reserva dopo 5 minuts
+- ✅ Flux complet: reserva → compte enrere → compra → entrades
+- ✅ Expiració de reserva al cap de 5 minuts
 
 ---
 
@@ -147,7 +147,7 @@ T=30ms   Socket.IO notifica a tots els clients
 | Panel admin | ✅ | Stats + informe |
 | Socket.IO | ✅ | >5 events implementados |
 | Concurrencia | ✅ | Locks BD + tests |
-| Tests | ✅ | Playwright concurrency |
+| Tests | ✅ | Cypress e2e + concurrencia |
 | Documentación | ✅ | README + diagrams *pending |
 
 ---
@@ -198,11 +198,11 @@ VITE_SOCKET_URL=http://localhost:3000
 
 ## 📌 Nota Important
 
-Segons l'enunciado, aquest projecte **deu demostrar:**
+Segons l'enunciat, aquest projecte **ha de demostrar:**
 1. ✅ Funcionament correcte de Socket.IO
 2. ✅ Manejo de concurrencia (2+ usuaris → 1 seient)
 3. ✅ Persistencia de estado (BD + real-time)
 4. ✅ Tests automàtics de flux i concurrencia
 5. 📌 Diagrames UML (casos d'ús, seqüència) - **EN PROGRESS**
 
-El codi es entirely in **Catalan** com demana l'enunciado.
+El codi i la documentacio principal del projecte estan en **catala** com demana l'enunciat.
