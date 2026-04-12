@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ApiController extends Controller
 {
@@ -288,14 +289,19 @@ class ApiController extends Controller
             ], 400);
         }
 
-        $userId = DB::table('users')->insertGetId([
+        $insertData = [
             'email' => $email,
             'password' => Hash::make($password),
-            'role' => 'comprador',
             'name' => $name,
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ];
+
+        if (Schema::hasColumn('users', 'role')) {
+            $insertData['role'] = 'comprador';
+        }
+
+        $userId = DB::table('users')->insertGetId($insertData);
 
         $role = 'comprador';
         $token = $this->makeToken((int) $userId, (string) $email, $role);
