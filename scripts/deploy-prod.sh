@@ -162,7 +162,10 @@ else
 fi
 
 write_https_active
-$COMPOSE up -d nginx
+$COMPOSE up -d --force-recreate nginx
+
+echo "--- active.conf (host) ---"
+sed -n '1,140p' deploy/nginx/active.conf
 
 # Docker DNS can be briefly unavailable just after recreating services.
 # Retry nginx config test/reload to avoid flaky deploy failures.
@@ -176,6 +179,8 @@ while [ "$attempt" -le "$max_attempts" ]; do
 
   if [ "$attempt" -eq "$max_attempts" ]; then
     echo "ERROR: nginx -t sigue fallando tras $max_attempts intentos"
+    echo "--- default.conf (container) ---"
+    $COMPOSE exec -T nginx sh -lc 'sed -n "1,180p" /etc/nginx/conf.d/default.conf' || true
     $COMPOSE exec -T nginx nginx -t || true
     exit 1
   fi
