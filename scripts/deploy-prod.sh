@@ -19,7 +19,122 @@ COMPOSE="docker compose --env-file .env.prod -f docker-compose.prod.yml"
 DOMAIN="${DOMAIN:-a23poldiabel.daw.inspedralbes.cat}"
 LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
 
-cp deploy/nginx/http.conf deploy/nginx/active.conf
+write_http_active() {
+  cat > deploy/nginx/active.conf <<EOF
+server {
+  listen 80;
+  listen [::]:80;
+  server_name $DOMAIN;
+  resolver 127.0.0.11 ipv6=off valid=30s;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location /socket.io/ {
+    set \$sockets_upstream entrades-sockets-prod:3000;
+    proxy_pass http://\$sockets_upstream/socket.io/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location /api/ {
+    set \$api_upstream entrades-api-prod:8000;
+    proxy_pass http://\$api_upstream/api/;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location / {
+    set \$frontend_upstream entrades-frontend-prod:3001;
+    proxy_pass http://\$frontend_upstream/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+}
+EOF
+}
+
+write_https_active() {
+  cat > deploy/nginx/active.conf <<EOF
+server {
+  listen 80;
+  listen [::]:80;
+  server_name $DOMAIN;
+  resolver 127.0.0.11 ipv6=off valid=30s;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    return 301 https://\$host\$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  http2 on;
+  server_name $DOMAIN;
+  resolver 127.0.0.11 ipv6=off valid=30s;
+
+  ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:SSL:10m;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+
+  location /socket.io/ {
+    set \$sockets_upstream entrades-sockets-prod:3000;
+    proxy_pass http://\$sockets_upstream/socket.io/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location /api/ {
+    set \$api_upstream entrades-api-prod:8000;
+    proxy_pass http://\$api_upstream/api/;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+
+  location / {
+    set \$frontend_upstream entrades-frontend-prod:3001;
+    proxy_pass http://\$frontend_upstream/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+}
+EOF
+}
+
+write_http_active
 
 $COMPOSE up -d --build postgres api sockets frontend nginx
 
@@ -46,7 +161,7 @@ else
   $COMPOSE run --rm certbot renew --webroot --webroot-path /var/www/certbot || true
 fi
 
-cp deploy/nginx/https.conf deploy/nginx/active.conf
+write_https_active
 $COMPOSE up -d nginx
 
 # Docker DNS can be briefly unavailable just after recreating services.
