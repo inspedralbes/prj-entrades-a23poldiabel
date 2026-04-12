@@ -38,37 +38,37 @@ function handleClick() {
 
 <style scoped>
 .seient {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   border: 2px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
 }
 
 .seient--disponible {
-  background-color: #22c55e;
-  border-color: #15803d;
-  color: #052e16;
+  background-color: #37b24d;
+  border-color: #27903d;
+  color: #fff;
 }
 
 .seient--reservat {
-  background-color: #f59e0b;
-  border-color: #b45309;
-  color: #451a03;
+  background-color: #e8a515;
+  border-color: #c58602;
+  color: #402703;
   opacity: 0.9;
 }
 
 .seient--seleccionat {
-  background-color: #2563eb;
-  border-color: #1d4ed8;
+  background-color: #0f7b7f;
+  border-color: #0b6165;
   color: #eff6ff;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 0 3px rgba(15, 123, 127, 0.26);
 }
 
 .seient--venut {
@@ -84,8 +84,8 @@ function handleClick() {
 }
 
 .seient--seleccionable.seient--disponible:hover {
-  transform: translateY(-1px) scale(1.05);
-  box-shadow: 0 8px 14px rgba(21, 128, 61, 0.22);
+  transform: translateY(-2px) scale(1.07);
+  box-shadow: 0 10px 14px rgba(40, 128, 61, 0.25);
 }
 
 .seient-numero {

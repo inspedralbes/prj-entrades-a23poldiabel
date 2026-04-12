@@ -1,5 +1,5 @@
 <template>
-  <div class="event-detail">
+  <div class="event-detail page-enter">
     <NuxtLink to="/events" class="back-link">&larr; Tornar als esdeveniments</NuxtLink>
 
     <div v-if="carregant" class="loading">Carregant...</div>
@@ -27,7 +27,7 @@
 
       <!-- Barra de connexió Socket.IO -->
       <div class="connection-status" :class="{ connected: isConnected }">
-        {{ isConnected ? '🟢 Connectat en temps real' : '🔴 Desconnectat' }}
+        {{ isConnected ? 'Connectat en temps real' : 'Desconnectat' }}
         <span v-if="usersConnected > 0" class="users-count">
           · {{ usersConnected }} {{ usersConnected === 1 ? 'usuari' : 'usuaris' }} connectats
         </span>
@@ -425,7 +425,7 @@ function getTime(data: string) {
 
 <style scoped>
 .event-detail {
-  padding: 2rem;
+  padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -433,25 +433,28 @@ function getTime(data: string) {
 .back-link {
   display: inline-block;
   margin-bottom: 1.5rem;
-  color: #4a90d9;
+  color: #0f7b7f;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
 }
 
 .back-link:hover {
-  text-decoration: underline;
+  opacity: 0.85;
 }
 
 .loading, .error-message {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: #5e6974;
 }
 
 .error-message {
   color: #e74c3c;
-  background: #fef2f2;
-  border-radius: 8px;
+  background: #fff2ef;
+  border-radius: 0.8rem;
 }
 
 .toast-warning {
@@ -466,16 +469,27 @@ function getTime(data: string) {
 
 .connection-status {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 0.85rem;
   margin-bottom: 1rem;
-  background: #fef2f2;
-  color: #b91c1c;
+  background: #fff2ef;
+  color: #ac2f2d;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.connection-status::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .connection-status.connected {
-  background: #f0fdf4;
-  color: #15803d;
+  background: #e9f8f0;
+  color: #1d8f58;
 }
 
 .users-count {
@@ -483,16 +497,17 @@ function getTime(data: string) {
 }
 
 .event-content {
-  background: #fff;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1.2rem;
   padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow: 0 20px 40px rgba(21, 34, 49, 0.14);
 }
 
 .event-banner {
   width: 100%;
-  height: 300px;
-  border-radius: 8px;
+  height: 320px;
+  border-radius: 1rem;
   overflow: hidden;
   margin-bottom: 2rem;
 }
@@ -508,7 +523,7 @@ function getTime(data: string) {
   gap: 1.5rem;
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e3e8ef;
 }
 
 .event-date-badge {
@@ -516,7 +531,7 @@ function getTime(data: string) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #4a90d9;
+  background: linear-gradient(160deg, #0f7b7f, #15a2a8);
   color: #fff;
   padding: 1rem;
   border-radius: 8px;
@@ -540,18 +555,19 @@ function getTime(data: string) {
 }
 
 .event-info h1 {
-  color: #1a1a2e;
+  color: #182027;
   margin-bottom: 0.5rem;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
 }
 
 .venue, .time {
-  color: #666;
+  color: #4f5d69;
   margin-bottom: 0.25rem;
 }
 
 .description {
   margin-top: 1rem;
-  color: #444;
+  color: #3f4a55;
   line-height: 1.6;
 }
 
@@ -559,11 +575,12 @@ function getTime(data: string) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  background: linear-gradient(125deg, #ff6b4a, #ff8f58 62%, #ffc857);
   color: #fff;
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: 1rem;
   margin-bottom: 2rem;
+  box-shadow: 0 18px 30px rgba(255, 107, 74, 0.25);
 }
 
 .reservation-info {
@@ -591,16 +608,20 @@ function getTime(data: string) {
 
 .btn {
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: 999px;
+  font-weight: 700;
   cursor: pointer;
   border: none;
-  transition: all 0.2s;
+  transition: transform 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
 }
 
 .btn-primary {
   background: #fff;
-  color: #4a90d9;
+  color: #ff6b4a;
 }
 
 .btn-primary:hover {
@@ -610,7 +631,7 @@ function getTime(data: string) {
 .btn-secondary {
   background: transparent;
   color: #fff;
-  border: 2px solid #fff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .btn-secondary:hover {
@@ -622,7 +643,7 @@ function getTime(data: string) {
 }
 
 .zones-legend h3 {
-  color: #1a1a2e;
+  color: #1f2a34;
   margin-bottom: 1rem;
 }
 
@@ -636,18 +657,51 @@ function getTime(data: string) {
   display: flex;
   justify-content: space-between;
   padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #4a90d9;
+  background: #f8fbfd;
+  border-radius: 0.8rem;
+  border-left: 4px solid #0f7b7f;
 }
 
 .zone-name {
   font-weight: 600;
-  color: #1a1a2e;
+  color: #1f2a34;
 }
 
 .zone-price {
-  color: #4a90d9;
+  color: #0f7b7f;
   font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .event-detail {
+    padding: 1rem;
+  }
+
+  .event-content {
+    padding: 1.1rem;
+  }
+
+  .event-banner {
+    height: 220px;
+  }
+
+  .event-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .reservation-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .reservation-actions {
+    width: 100%;
+  }
+
+  .btn {
+    width: 100%;
+  }
 }
 </style>

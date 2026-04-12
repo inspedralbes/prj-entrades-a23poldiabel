@@ -1,8 +1,8 @@
 <template>
-  <div class="container">
+  <div class="container checkout-page page-enter">
     <NuxtLink to="/events" class="torna">&larr; Tornar als esdeveniments</NuxtLink>
 
-    <h1>Checkout</h1>
+    <h1>Checkout · a23poldiabel</h1>
 
     <div v-if="compraExitosa" class="success-message card">
       Compra realitzada amb èxit! Les teves entrades s'han enviat al teu correu.
@@ -150,8 +150,21 @@ async function confirmarCompra() {
 .torna {
   display: inline-block;
   margin-bottom: var(--spacing-lg);
-  color: var(--color-primary);
+  color: #0f7b7f;
   text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.checkout-page h1 {
+  margin-bottom: 1rem;
+}
+
+.success-message,
+.error-message {
+  border-radius: 1rem;
 }
 
 .checkout-contingut {
@@ -159,6 +172,17 @@ async function confirmarCompra() {
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-xl);
   margin-top: var(--spacing-lg);
+}
+
+.resum-compra,
+.formulari-compra {
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 34px rgba(21, 34, 49, 0.1);
+}
+
+.resum-compra h2,
+.formulari-compra h2 {
+  color: #1f2a34;
 }
 
 @media (max-width: 768px) {
@@ -171,10 +195,16 @@ async function confirmarCompra() {
   margin: var(--spacing-md) 0;
 }
 
+.seients-seleccionats ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #46525d;
+}
+
 .temps-restant {
   font-size: 1.25rem;
   font-weight: bold;
-  color: var(--color-warning);
+  color: #ff6b4a;
 }
 
 .formulari-compra .form-group {
@@ -184,15 +214,20 @@ async function confirmarCompra() {
 .formulari-compra label {
   display: block;
   margin-bottom: var(--spacing-xs);
-  font-weight: 500;
+  font-weight: 700;
+  color: #2c3946;
 }
 
 .info-group p {
   margin: 0;
   padding: 0.7rem 0.8rem;
-  border: 1px solid #dbe3ef;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #1f2937;
+  border: 1px solid #d4dde6;
+  border-radius: 0.75rem;
+  background: #f8fbfd;
+  color: #1f2a34;
+}
+
+.formulari-compra .btn-primary {
+  width: 100%;
 }
 </style>

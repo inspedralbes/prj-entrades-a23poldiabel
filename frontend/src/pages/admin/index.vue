@@ -1,7 +1,7 @@
 <template>
-  <div class="admin-panel">
+  <div class="admin-panel page-enter">
     <header class="admin-header">
-      <h1>🎵 Panell d'Administració d'Entrades</h1>
+      <h1>Panell Admin · a23poldiabel</h1>
       <NuxtLink to="/events" class="btn btn-secondary">Tornar</NuxtLink>
     </header>
 
@@ -90,7 +90,7 @@
         <!-- Botó per veure informe detallat -->
         <div class="card action-card">
           <button class="btn btn-primary" @click="carregarInforme">
-            📊 Veure Informe Detallat
+            Veure Informe Detallat
           </button>
         </div>
 
@@ -182,11 +182,9 @@ function formatDate(data: string) {
 
 <style scoped>
 .admin-panel {
-  padding: 2rem;
+  padding: 1.4rem;
   max-width: 1400px;
   margin: 0 auto;
-  background: #f9f9f9;
-  min-height: 100vh;
 }
 
 .admin-header {
@@ -195,9 +193,10 @@ function formatDate(data: string) {
   align-items: center;
   margin-bottom: 2rem;
   padding: 2rem;
-  background: #1a1a2e;
+  background: linear-gradient(120deg, #0f7b7f, #15a2a8);
   color: #fff;
-  border-radius: 12px;
+  border-radius: 1.1rem;
+  box-shadow: 0 16px 30px rgba(12, 100, 104, 0.3);
 }
 
 .admin-header h1 {
@@ -212,11 +211,12 @@ function formatDate(data: string) {
 
 .search-section {
   padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.85);
 }
 
 .search-section h2 {
   margin-bottom: 1rem;
-  color: #1a1a2e;
+  color: #1f2a34;
 }
 
 .search-grid {
@@ -227,31 +227,32 @@ function formatDate(data: string) {
 
 .event-card {
   padding: 1.5rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid #d8e1ea;
+  border-radius: 1rem;
   cursor: pointer;
   transition: all 0.3s;
+  background: linear-gradient(165deg, #ffffff, #fbfdff);
 }
 
 .event-card:hover {
-  border-color: #4a90d9;
-  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.2);
-  transform: translateY(-2px);
+  border-color: #0f7b7f;
+  box-shadow: 0 16px 30px rgba(21, 34, 49, 0.14);
+  transform: translateY(-6px);
 }
 
 .event-card h3 {
   margin: 0 0 0.5rem 0;
-  color: #1a1a2e;
+  color: #1f2a34;
 }
 
 .event-date {
-  color: #4a90d9;
+  color: #0f7b7f;
   font-weight: bold;
   margin: 0.25rem 0;
 }
 
 .event-venue {
-  color: #666;
+  color: #5a6672;
   margin: 0.5rem 0 1rem 0;
 }
 
@@ -273,15 +274,16 @@ function formatDate(data: string) {
 
 .stats-card {
   padding: 2rem;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 28px rgba(21, 34, 49, 0.11);
 }
 
 .stats-card h2 {
   margin-top: 0;
-  color: #1a1a2e;
-  border-bottom: 2px solid #eee;
+  color: #1f2a34;
+  border-bottom: 2px solid #e8edf2;
   padding-bottom: 1rem;
 }
 
@@ -317,8 +319,8 @@ function formatDate(data: string) {
 }
 
 .stat-row.reservats {
-  background: #ede7f6;
-  color: #512da8;
+  background: #fdecef;
+  color: #b23946;
 }
 
 .total {
@@ -335,15 +337,15 @@ function formatDate(data: string) {
 .occupancy-bar {
   width: 100%;
   height: 30px;
-  background: #f0f0f0;
+  background: #eef3f6;
   border-radius: 6px;
   overflow: hidden;
-  border: 2px solid #ddd;
+  border: 2px solid #d3dde6;
 }
 
 .occupancy-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4a90d9, #2196f3);
+  background: linear-gradient(90deg, #ff6b4a, #ff8f58, #ffc857);
   transition: width 0.3s ease;
 }
 
@@ -351,7 +353,7 @@ function formatDate(data: string) {
   text-align: center;
   font-size: 1.25rem;
   font-weight: bold;
-  color: #4a90d9;
+  color: #ff6b4a;
   margin-top: 0.75rem;
 }
 
@@ -366,20 +368,20 @@ function formatDate(data: string) {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: #f5f5f5;
+  background: #f6fafc;
   border-radius: 6px;
   font-weight: 500;
 }
 
 .activity-item .value {
   font-size: 1.5rem;
-  color: #4a90d9;
+  color: #0f7b7f;
 }
 
 .big-number {
   font-size: 3rem;
   font-weight: bold;
-  color: #2e7d32;
+  color: #0f7b7f;
   margin: 0;
   text-align: center;
 }
@@ -408,9 +410,9 @@ function formatDate(data: string) {
 }
 
 .informe-table th {
-  background: #f5f5f5;
+  background: #f2f6f9;
   font-weight: bold;
-  color: #1a1a2e;
+  color: #1f2a34;
 }
 
 .informe-table tr:hover {
@@ -419,14 +421,14 @@ function formatDate(data: string) {
 
 .informe-total {
   padding: 2rem;
-  background: #f0f7ff;
+  background: #eef8f8;
   border-radius: 8px;
-  border-left: 4px solid #4a90d9;
+  border-left: 4px solid #0f7b7f;
 }
 
 .informe-total h3 {
   margin: 0 0 0.5rem 0;
-  color: #1a1a2e;
+  color: #1f2a34;
 }
 
 .loading,
@@ -442,36 +444,58 @@ function formatDate(data: string) {
 }
 
 .card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
+  box-shadow: 0 16px 28px rgba(21, 34, 49, 0.11);
 }
 
 .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.78rem 1.55rem;
   border: none;
-  border-radius: 6px;
-  font-weight: 500;
+  border-radius: 999px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
 }
 
 .btn-primary {
-  background: #4a90d9;
+  background: linear-gradient(120deg, #ff6b4a, #ff8f58 62%, #ffc857);
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #2e5c9e;
+  opacity: 0.93;
 }
 
 .btn-secondary {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   color: #fff;
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .admin-panel {
+    padding: 1rem;
+  }
+
+  .admin-header {
+    padding: 1.2rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 </style>

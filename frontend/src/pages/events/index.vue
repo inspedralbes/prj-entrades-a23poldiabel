@@ -1,7 +1,7 @@
 <template>
-  <main class="events-page container">
+  <main class="events-page container page-enter">
     <header class="events-header">
-      <h1>Esdeveniments</h1>
+      <h1>a23poldiabel · Esdeveniments</h1>
       <p>Escull un esdeveniment per seleccionar seients i comprar entrades.</p>
     </header>
 
@@ -118,23 +118,27 @@ onMounted(carregarEvents);
 }
 
 .events-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
+  background: linear-gradient(130deg, rgba(15, 123, 127, 0.12), rgba(255, 107, 74, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 1.2rem;
+  padding: 1.2rem 1.3rem;
 }
 
 .events-header h1 {
   margin: 0;
-  font-size: 2rem;
-  color: #14213d;
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  color: #182027;
 }
 
 .events-header p {
   margin-top: 0.4rem;
-  color: #5b667a;
+  color: #45515d;
 }
 
 .state-box {
-  background: #fff;
-  border: 1px solid #dfe4ec;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #d4dde6;
   border-radius: 12px;
   padding: 1.25rem;
   display: flex;
@@ -150,30 +154,31 @@ onMounted(carregarEvents);
 
 .events-grid {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
 .event-card {
   display: flex;
   flex-direction: column;
   text-decoration: none;
-  background: #fff;
-  border: 1px solid #dfe4ec;
-  border-radius: 14px;
+  background: linear-gradient(160deg, #ffffff, #fbfcfd);
+  border: 1px solid #d5dee7;
+  border-radius: 1rem;
   overflow: hidden;
-  min-height: 340px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  min-height: 360px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
 }
 
 .event-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(16, 33, 61, 0.08);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 34px rgba(21, 34, 49, 0.15);
 }
 
 .event-media {
-  height: 150px;
-  background: #edf2fb;
+  height: 170px;
+  background: linear-gradient(130deg, #e6f2f2, #ffe8df);
 }
 
 .event-media img {
@@ -188,7 +193,7 @@ onMounted(carregarEvents);
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  color: #2b4f97;
+  color: #0f7b7f;
 }
 
 .event-content {
@@ -196,24 +201,24 @@ onMounted(carregarEvents);
   flex-direction: column;
   gap: 0.45rem;
   padding: 1rem;
-  color: #1e2b42;
+  color: #1f2a34;
 }
 
 .event-content h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.06rem;
   line-height: 1.35;
 }
 
 .event-meta {
   margin: 0;
   font-size: 0.9rem;
-  color: #5b667a;
+  color: #5a6671;
 }
 
 .event-description {
   margin: 0.25rem 0 0;
-  color: #4a5568;
+  color: #46515d;
   font-size: 0.9rem;
   line-height: 1.4;
   min-height: 2.8em;
@@ -223,7 +228,10 @@ onMounted(carregarEvents);
   margin-top: auto;
   display: inline-block;
   font-weight: 600;
-  color: #1f4ec4;
+  color: #0f7b7f;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
 }
 
 .more-wrap {

@@ -1,7 +1,7 @@
 <template>
-  <div class="account-page">
+  <div class="account-page page-enter">
     <div class="account-header">
-      <h1>El meu compte</h1>
+      <h1>a23poldiabel · El meu compte</h1>
       <div class="user-info">
         <div class="avatar">{{ usuari?.nom?.charAt(0).toUpperCase() }}</div>
         <div class="user-details">
@@ -185,12 +185,12 @@ function formatTime(data?: string) {
 }
 
 .ticket-card.reservation {
-  border-left: 4px solid #f1c40f;
+  border-left: 4px solid #ffc857;
 }
 
 .ticket-card.reservation .ticket-event {
-  background: #f1c40f;
-  color: #1a1a2e;
+  background: linear-gradient(150deg, #ffc857, #ff8f58);
+  color: #2f1e12;
 }
 
 .btn-sm {
@@ -198,7 +198,7 @@ function formatTime(data?: string) {
   font-size: 0.875rem;
 }
 .account-page {
-  padding: 2rem;
+  padding: 1.4rem;
   max-width: 900px;
   margin: 0 auto;
 }
@@ -208,7 +208,7 @@ function formatTime(data?: string) {
 }
 
 .account-header h1 {
-  color: #1a1a2e;
+  color: #1f2a34;
   margin-bottom: 1.5rem;
 }
 
@@ -216,16 +216,17 @@ function formatTime(data?: string) {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.88);
   padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 18px 34px rgba(21, 34, 49, 0.11);
 }
 
 .avatar {
   width: 60px;
   height: 60px;
-  background: #4a90d9;
+  background: linear-gradient(140deg, #0f7b7f, #15a2a8);
   color: #fff;
   border-radius: 50%;
   display: flex;
@@ -236,16 +237,16 @@ function formatTime(data?: string) {
 }
 
 .user-details h2 {
-  color: #1a1a2e;
+  color: #1f2a34;
   margin-bottom: 0.25rem;
 }
 
 .user-details p {
-  color: #666;
+  color: #586571;
 }
 
 .tickets-section h3 {
-  color: #1a1a2e;
+  color: #1f2a34;
   margin-bottom: 1.5rem;
 }
 
@@ -262,8 +263,8 @@ function formatTime(data?: string) {
 .empty-state {
   text-align: center;
   padding: 3rem;
-  background: #fff;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.86);
+  border-radius: 1rem;
 }
 
 .empty-state p {
@@ -281,12 +282,12 @@ function formatTime(data?: string) {
 }
 
 .btn-primary {
-  background: #4a90d9;
+  background: linear-gradient(120deg, #ff6b4a, #ff8f58 62%, #ffc857);
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #357abd;
+  transform: translateY(-1px);
 }
 
 .tickets-list {
@@ -297,14 +298,15 @@ function formatTime(data?: string) {
 
 .ticket-card {
   display: flex;
-  background: #fff;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 28px rgba(21, 34, 49, 0.11);
 }
 
 .ticket-event {
-  background: #4a90d9;
+  background: linear-gradient(150deg, #0f7b7f, #15a2a8);
   color: #fff;
   padding: 1.5rem;
   min-width: 200px;
@@ -334,6 +336,7 @@ function formatTime(data?: string) {
 .ticket-details {
   flex: 1;
   padding: 1.5rem;
+  color: #34404c;
 }
 
 .ticket-code, .ticket-seats, .ticket-purchase-date {
@@ -341,7 +344,7 @@ function formatTime(data?: string) {
 }
 
 .label {
-  color: #666;
+  color: #5a6672;
   font-size: 0.85rem;
   display: block;
   margin-bottom: 0.25rem;
@@ -350,7 +353,7 @@ function formatTime(data?: string) {
 .code {
   font-family: monospace;
   font-size: 1.1rem;
-  color: #1a1a2e;
+  color: #1f2a34;
   font-weight: 600;
 }
 
@@ -361,8 +364,8 @@ function formatTime(data?: string) {
 }
 
 .seat-tag {
-  background: #f0f4f8;
-  color: #4a90d9;
+  background: #e9f6f6;
+  color: #0f7b7f;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -374,19 +377,34 @@ function formatTime(data?: string) {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: #f9f9f9;
+  background: #f7fafc;
   min-width: 100px;
 }
 
 .qr-placeholder {
   width: 60px;
   height: 60px;
-  background: #1a1a2e;
+  background: #1f2a34;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .account-page {
+    padding: 1rem;
+  }
+
+  .ticket-card {
+    flex-direction: column;
+  }
+
+  .ticket-event,
+  .ticket-qr {
+    min-width: auto;
+  }
 }
 </style>

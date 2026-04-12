@@ -130,10 +130,11 @@ function seleccionarSeient(seientId: string) {
 
 <style scoped>
 .mapa-seients {
-  padding: var(--spacing-md);
-  background: #f8fafc;
-  border: 1px solid #dbe3ef;
-  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #d9e1e8;
+  border-radius: 1.1rem;
+  box-shadow: 0 14px 28px rgba(21, 34, 49, 0.08);
 }
 
 .zones {
@@ -143,8 +144,8 @@ function seleccionarSeient(seientId: string) {
 }
 
 .zona {
-  background: #ffffff;
-  border: 1px solid #dbe3ef;
+  background: linear-gradient(165deg, #ffffff, #fbfdff);
+  border: 1px solid #d6e0e9;
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
 }
@@ -152,7 +153,7 @@ function seleccionarSeient(seientId: string) {
 .zona-titol {
   text-align: center;
   margin-bottom: var(--spacing-md);
-  color: #1f2937;
+  color: #1f2a34;
 }
 
 .fila {
@@ -165,7 +166,7 @@ function seleccionarSeient(seientId: string) {
 .fila-label {
   width: 28px;
   font-weight: 600;
-  color: #475569;
+  color: #43515f;
 }
 
 .seients-fila {
@@ -179,7 +180,7 @@ function seleccionarSeient(seientId: string) {
   margin-top: var(--spacing-xl);
   padding: var(--spacing-md);
   background: #ffffff;
-  border: 1px solid #dbe3ef;
+  border: 1px solid #d6e0e9;
   border-radius: var(--radius-md);
 }
 
@@ -207,18 +208,18 @@ function seleccionarSeient(seientId: string) {
 }
 
 .llegenda-color.disponible {
-  background: #22c55e;
-  border-color: #15803d;
+  background: #37b24d;
+  border-color: #27903d;
 }
 
 .llegenda-color.reservat {
-  background: #f59e0b;
-  border-color: #b45309;
+  background: #e8a515;
+  border-color: #c58602;
 }
 
 .llegenda-color.seleccionat {
-  background: #2563eb;
-  border-color: #1d4ed8;
+  background: #0f7b7f;
+  border-color: #0b6165;
 }
 
 .llegenda-color.venut {

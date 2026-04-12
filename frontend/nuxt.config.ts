@@ -12,11 +12,11 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Plataforma d\'Entrades',
+      title: 'a23poldiabel',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Plataforma de venda d\'entrades en temps real' },
+        { name: 'description', content: 'a23poldiabel - ticketing en temps real amb una experiencia visual moderna' },
       ],
       htmlAttrs: {
         lang: 'ca',

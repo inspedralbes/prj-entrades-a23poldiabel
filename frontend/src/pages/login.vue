@@ -1,6 +1,7 @@
 <template>
   <div class="auth-page">
-    <div class="auth-container">
+    <div class="auth-container card page-enter">
+      <p class="brand">a23poldiabel</p>
       <h1>Iniciar Sessió</h1>
       <form @submit.prevent="handleLogin" class="auth-form">
         <div class="form-group">
@@ -61,27 +62,36 @@ async function handleLogin() {
 
 <style scoped>
 .auth-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 5rem);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 1.2rem;
 }
 
 .auth-container {
-  background: #fff;
   padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
 }
 
 h1 {
   text-align: center;
-  color: #1a1a2e;
+  color: #182027;
   margin-bottom: 1.5rem;
   font-size: 1.75rem;
+}
+
+.brand {
+  text-align: center;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #0f7b7f;
+  margin-bottom: 0.55rem;
+  font-weight: 800;
 }
 
 .form-group {
@@ -91,44 +101,46 @@ h1 {
 label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: 500;
+  color: #2f3b46;
+  font-weight: 700;
 }
 
 input {
   width: 100%;
   padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid #cfdae4;
+  border-radius: 0.8rem;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
 }
 
 input:focus {
   outline: none;
-  border-color: #4a90d9;
+  border-color: #0f7b7f;
+  box-shadow: 0 0 0 4px rgba(15, 123, 127, 0.14);
 }
 
 button {
   width: 100%;
   padding: 0.875rem;
-  background: #4a90d9;
+  background: linear-gradient(120deg, #ff6b4a, #ff8f58 65%, #ffc857);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: transform 0.2s;
 }
 
 button:hover:not(:disabled) {
-  background: #357abd;
+  transform: translateY(-1px);
 }
 
 button:disabled {
-  background: #a0c4e8;
+  background: #f1beaf;
   cursor: not-allowed;
 }
 
@@ -141,11 +153,11 @@ button:disabled {
 .auth-link {
   text-align: center;
   margin-top: 1.5rem;
-  color: #666;
+  color: #5f6c78;
 }
 
 .auth-link a {
-  color: #4a90d9;
+  color: #0f7b7f;
   font-weight: 600;
 }
 </style>

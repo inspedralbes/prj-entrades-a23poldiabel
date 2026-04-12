@@ -6,10 +6,150 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
     private const RESERVA_DURADA_MINUTS = 5;
+
+    private function syncTicketmasterEvents(): void
+    {
+        $apiKey = (string) env('TICKETMASTER_API_KEY', '');
+        if ($apiKey === '') {
+            return;
+        }
+
+        try {
+            $response = Http::timeout(12)->get('https://app.ticketmaster.com/discovery/v2/events.json', [
+                'apikey' => $apiKey,
+                'countryCode' => (string) env('TICKETMASTER_COUNTRY_CODE', 'ES'),
+                'city' => (string) env('TICKETMASTER_CITY', 'Barcelona'),
+                'size' => (int) env('TICKETMASTER_SIZE', 20),
+                'sort' => 'date,asc',
+            ]);
+
+            if (!$response->ok()) {
+                Log::warning('Ticketmaster sync failed', ['status' => $response->status()]);
+                return;
+            }
+
+            $payload = $response->json();
+            $events = $payload['_embedded']['events'] ?? [];
+            if (!is_array($events) || empty($events)) {
+                return;
+            }
+
+            foreach ($events as $tmEvent) {
+                if (!is_array($tmEvent)) {
+                    continue;
+                }
+
+                $this->importTicketmasterEvent($tmEvent);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Ticketmaster sync exception', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function importTicketmasterEvent(array $tmEvent): ?int
+    {
+        $externalId = (string) ($tmEvent['id'] ?? '');
+        if ($externalId === '') {
+            return null;
+        }
+
+        $name = (string) ($tmEvent['name'] ?? 'Esdeveniment Ticketmaster');
+        $startDateTime = $tmEvent['dates']['start']['dateTime'] ?? null;
+        $localDate = $tmEvent['dates']['start']['localDate'] ?? null;
+        $dateTime = $startDateTime
+            ? Carbon::parse((string) $startDateTime)->timezone(config('app.timezone'))->format('Y-m-d H:i:s')
+            : (($localDate ? Carbon::parse((string) $localDate)->setTime(20, 0) : now()->addDays(7))->format('Y-m-d H:i:s'));
+
+        $venue = (string) ($tmEvent['_embedded']['venues'][0]['name'] ?? 'Recinte Ticketmaster');
+        $description = (string) ($tmEvent['info'] ?? $tmEvent['pleaseNote'] ?? 'Esdeveniment importat des de Ticketmaster');
+        $images = $tmEvent['images'] ?? [];
+        $imageUrl = null;
+        if (is_array($images) && count($images) > 0) {
+            $imageUrl = (string) ($images[0]['url'] ?? '');
+        }
+
+        $existing = DB::table('events')
+            ->where('external_source', 'ticketmaster')
+            ->where('external_id', $externalId)
+            ->first();
+
+        if ($existing) {
+            DB::table('events')
+                ->where('id', $existing->id)
+                ->update([
+                    'name' => $name,
+                    'date_time' => $dateTime,
+                    'venue' => $venue,
+                    'description' => $description,
+                    'image_url' => $imageUrl ?: $existing->image_url,
+                    'status' => 'active',
+                    'updated_at' => now(),
+                ]);
+
+            $this->ensureEventSeatMap((int) $existing->id);
+            return (int) $existing->id;
+        }
+
+        $eventId = DB::table('events')->insertGetId([
+            'name' => $name,
+            'date_time' => $dateTime,
+            'venue' => $venue,
+            'description' => $description,
+            'image_url' => $imageUrl,
+            'status' => 'active',
+            'external_source' => 'ticketmaster',
+            'external_id' => $externalId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->ensureEventSeatMap((int) $eventId);
+        return (int) $eventId;
+    }
+
+    private function ensureEventSeatMap(int $eventId): void
+    {
+        $hasZones = DB::table('zones')->where('event_id', $eventId)->exists();
+        if ($hasZones) {
+            return;
+        }
+
+        $zones = [
+            ['zone_key' => 'general', 'zone_name' => 'General', 'price' => 39.00, 'color' => 'rgba(33,150,243,0.8)', 'rows' => 6, 'seats_per_row' => 14],
+            ['zone_key' => 'premium', 'zone_name' => 'Premium', 'price' => 65.00, 'color' => 'rgba(76,175,80,0.8)', 'rows' => 4, 'seats_per_row' => 10],
+        ];
+
+        foreach ($zones as $zone) {
+            $zoneId = DB::table('zones')->insertGetId([
+                'event_id' => $eventId,
+                'zone_key' => $zone['zone_key'],
+                'zone_name' => $zone['zone_name'],
+                'price' => $zone['price'],
+                'color' => $zone['color'],
+            ]);
+
+            for ($r = 0; $r < $zone['rows']; $r++) {
+                $row = chr(65 + $r);
+                for ($seat = 1; $seat <= $zone['seats_per_row']; $seat++) {
+                    DB::table('seats')->insert([
+                        'event_id' => $eventId,
+                        'zone_id' => $zoneId,
+                        'row' => $row,
+                        'seat_number' => $seat,
+                        'status' => 'AVAILABLE',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
+    }
 
     private function makeToken(int $userId, string $email): string
     {
@@ -203,6 +343,8 @@ class ApiController extends Controller
 
     public function events(): JsonResponse
     {
+        $this->syncTicketmasterEvents();
+
         $events = DB::table('events')->orderBy('date_time')->get();
 
         $zones = DB::table('zones')->get()->groupBy('event_id');

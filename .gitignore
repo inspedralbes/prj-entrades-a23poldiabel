@@ -1,0 +1,60 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Node / JS
+node_modules/
+**/node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+coverage/
+dist/
+build/
+.cache/
+.tmp/
+.temp/
+
+# Nuxt (frontend)
+frontend/.nuxt/
+frontend/.output/
+frontend/.nitro/
+frontend/.vercel/
+
+# Backend Node
+backend/node_modules/
+
+# Laravel (backend-laravel)
+backend-laravel/vendor/
+backend-laravel/bootstrap/cache/*.php
+backend-laravel/public/hot
+backend-laravel/public/storage
+backend-laravel/storage/*.key
+backend-laravel/storage/logs/*.log
+backend-laravel/storage/framework/cache/*
+backend-laravel/storage/framework/sessions/*
+backend-laravel/storage/framework/testing/*
+backend-laravel/storage/framework/views/*
+
+# DB / local runtime files
+*.sqlite
+*.sqlite3
+*.db
