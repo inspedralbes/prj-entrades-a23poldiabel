@@ -185,17 +185,19 @@ while [ "$attempt" -le "$max_attempts" ]; do
   sleep 2
 done
 
-echo "Comprobando salud de frontend y API a traves de Nginx interno..."
+echo "Comprobando reachability de upstreams frontend/API desde Nginx..."
 attempt=1
 max_attempts=30
 while [ "$attempt" -le "$max_attempts" ]; do
-  if $COMPOSE exec -T nginx sh -lc 'wget -q -O - --timeout=5 http://127.0.0.1/ >/dev/null 2>&1' \
-    && $COMPOSE exec -T nginx sh -lc 'wget -q -O - --timeout=5 http://127.0.0.1/api/events >/dev/null 2>&1'; then
+  if $COMPOSE exec -T nginx sh -lc 'wget -q -O - --timeout=5 http://frontend:3001/ >/dev/null 2>&1' \
+    && $COMPOSE exec -T nginx sh -lc 'wget -q -O - --timeout=5 http://api:8000/api/events >/dev/null 2>&1'; then
     break
   fi
 
   if [ "$attempt" -eq "$max_attempts" ]; then
-    echo "ERROR: frontend/API no responden correctamente tras deploy"
+    echo "ERROR: nginx no alcanza frontend/API tras deploy"
+    echo "--- diagnostico DNS/red desde nginx ---"
+    $COMPOSE exec -T nginx sh -lc 'getent hosts frontend api sockets || true' || true
     echo "--- logs frontend (tail 120) ---"
     $COMPOSE logs --tail=120 frontend || true
     echo "--- logs api (tail 120) ---"
