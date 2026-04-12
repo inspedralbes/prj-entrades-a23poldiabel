@@ -48,7 +48,26 @@ fi
 
 cp deploy/nginx/https.conf deploy/nginx/active.conf
 $COMPOSE up -d nginx
-$COMPOSE exec -T nginx nginx -t
-$COMPOSE exec -T nginx nginx -s reload
+
+# Docker DNS can be briefly unavailable just after recreating services.
+# Retry nginx config test/reload to avoid flaky deploy failures.
+attempt=1
+max_attempts=15
+while [ "$attempt" -le "$max_attempts" ]; do
+  if $COMPOSE exec -T nginx nginx -t >/dev/null 2>&1; then
+    $COMPOSE exec -T nginx nginx -s reload
+    break
+  fi
+
+  if [ "$attempt" -eq "$max_attempts" ]; then
+    echo "ERROR: nginx -t sigue fallando tras $max_attempts intentos"
+    $COMPOSE exec -T nginx nginx -t || true
+    exit 1
+  fi
+
+  echo "nginx no listo todavia (intento $attempt/$max_attempts). Reintentando en 2s..."
+  attempt=$((attempt + 1))
+  sleep 2
+done
 
 echo "Deploy de produccion completado para https://$DOMAIN"
