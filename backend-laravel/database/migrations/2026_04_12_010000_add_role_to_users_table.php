@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role', 30)->default('comprador')->after('password');
+            $table->string('role', 30)->default('comprador');
         });
 
         DB::table('users')->where('email', 'admin@gmail.com')->update(['role' => 'administrador']);

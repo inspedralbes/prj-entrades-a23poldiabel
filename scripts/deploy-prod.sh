@@ -138,6 +138,10 @@ write_http_active
 
 $COMPOSE up -d --build postgres api sockets frontend nginx
 
+# Run DB migrations as an explicit deploy step so failures are visible here
+# and do not leave the API container in a restart/crash loop.
+$COMPOSE run --rm api php artisan migrate --force
+
 HAS_CERT=0
 if $COMPOSE run --rm --entrypoint sh certbot -c "test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem"; then
   HAS_CERT=1
