@@ -25,15 +25,13 @@ server {
   listen 80;
   listen [::]:80;
   server_name $DOMAIN;
-  resolver 127.0.0.11 ipv6=off valid=30s;
 
   location ^~ /.well-known/acme-challenge/ {
     root /var/www/certbot;
   }
 
   location /socket.io/ {
-    set \$sockets_upstream entrades-sockets-prod:3000;
-    proxy_pass http://\$sockets_upstream\$request_uri;
+    proxy_pass http://sockets:3000\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -44,8 +42,7 @@ server {
   }
 
   location /api/ {
-    set \$api_upstream entrades-api-prod:8000;
-    proxy_pass http://\$api_upstream\$request_uri;
+    proxy_pass http://api:8000\$request_uri;
     proxy_set_header Host \$host;
     proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -53,8 +50,7 @@ server {
   }
 
   location / {
-    set \$frontend_upstream entrades-frontend-prod:3001;
-    proxy_pass http://\$frontend_upstream\$request_uri;
+    proxy_pass http://frontend:3001\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -73,7 +69,6 @@ server {
   listen 80;
   listen [::]:80;
   server_name $DOMAIN;
-  resolver 127.0.0.11 ipv6=off valid=30s;
 
   location ^~ /.well-known/acme-challenge/ {
     root /var/www/certbot;
@@ -89,7 +84,6 @@ server {
   listen [::]:443 ssl;
   http2 on;
   server_name $DOMAIN;
-  resolver 127.0.0.11 ipv6=off valid=30s;
 
   ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
   ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
@@ -99,8 +93,7 @@ server {
   ssl_prefer_server_ciphers off;
 
   location /socket.io/ {
-    set \$sockets_upstream entrades-sockets-prod:3000;
-    proxy_pass http://\$sockets_upstream\$request_uri;
+    proxy_pass http://sockets:3000\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -111,8 +104,7 @@ server {
   }
 
   location /api/ {
-    set \$api_upstream entrades-api-prod:8000;
-    proxy_pass http://\$api_upstream\$request_uri;
+    proxy_pass http://api:8000\$request_uri;
     proxy_set_header Host \$host;
     proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -120,8 +112,7 @@ server {
   }
 
   location / {
-    set \$frontend_upstream entrades-frontend-prod:3001;
-    proxy_pass http://\$frontend_upstream\$request_uri;
+    proxy_pass http://frontend:3001\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
