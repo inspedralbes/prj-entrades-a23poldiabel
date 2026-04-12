@@ -1,0 +1,2 @@
+-- Bootstrap placeholder.
+-- Database schema is managed by Laravel migrations in backend-laravel/database/migrations.

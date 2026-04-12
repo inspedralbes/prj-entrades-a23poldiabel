@@ -129,9 +129,8 @@ class ApiController extends Controller
 
         $userId = DB::table('users')->insertGetId([
             'email' => $email,
-            'password_hash' => $password,
-            'full_name' => $name,
-            'phone' => $phone,
+            'password' => $password,
+            'name' => $name,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -162,7 +161,7 @@ class ApiController extends Controller
         }
 
         $user = DB::table('users')->where('email', $email)->first();
-        if (!$user || $user->password_hash !== $password) {
+        if (!$user || $user->password !== $password) {
             return response()->json([
                 'error' => 'CREDENCIALS_INCORRECTES',
                 'missatge' => 'Credencials incorrectes',
@@ -176,7 +175,7 @@ class ApiController extends Controller
             'usuari' => [
                 'id' => (string) $user->id,
                 'correu_electronic' => $user->email,
-                'nom' => $user->full_name,
+                'nom' => $user->name,
                 'rol' => 'comprador',
             ],
         ]);
@@ -197,7 +196,7 @@ class ApiController extends Controller
         return response()->json([
             'id' => (string) $user->id,
             'correu_electronic' => $user->email,
-            'nom' => $user->full_name,
+            'nom' => $user->name,
             'rol' => 'comprador',
         ]);
     }

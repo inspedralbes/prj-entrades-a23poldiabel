@@ -173,24 +173,32 @@ async function bootstrap() {
       const eventId = parseInt(String(data?.eventId || 0), 10);
       const userId = parseInt(String(data?.userId || 1), 10) || 1;
 
-      const result = await attemptSeatReservation(userId, eventId, seatId);
-      if (result.success) {
-        socket.emit('reservation-confirmed', {
-          seatId,
-          reservation: result.reservation,
-        });
+      try {
+        const result = await attemptSeatReservation(userId, eventId, seatId);
+        if (result.success) {
+          socket.emit('reservation-confirmed', {
+            seatId,
+            reservation: result.reservation,
+          });
 
-        io.to(`event-${eventId}`).emit('seat-reserved', {
-          seient_id: String(seatId),
-          seatId,
-          estat: 'reservat',
-          reserved_by: userId,
-          expires_at: result.reservation?.expires_at,
-        });
-      } else {
+          io.to(`event-${eventId}`).emit('seat-reserved', {
+            seient_id: String(seatId),
+            seatId,
+            estat: 'reservat',
+            reserved_by: userId,
+            expires_at: result.reservation?.expires_at,
+          });
+        } else {
+          socket.emit('reservation-failed', {
+            seatId,
+            message: result.message,
+          });
+        }
+      } catch (error) {
+        console.error('[socket] Error select-seat:', error);
         socket.emit('reservation-failed', {
           seatId,
-          message: result.message,
+          message: 'Error en seleccionar seient',
         });
       }
     });
@@ -200,17 +208,25 @@ async function bootstrap() {
       const eventId = parseInt(String(data?.eventId || data?.esdeveniment_id || 0), 10);
       const userId = parseInt(String(data?.userId || data?.usuari_id || 1), 10) || 1;
 
-      const success = await releaseSeatReservation(seatId, userId);
-      if (success) {
-        const session = userSessions.get(socket.id);
-        if (session) {
-          session.seatIds = session.seatIds.filter((id) => id !== seatId);
-        }
+      try {
+        const success = await releaseSeatReservation(seatId, userId);
+        if (success) {
+          const session = userSessions.get(socket.id);
+          if (session) {
+            session.seatIds = session.seatIds.filter((id) => id !== seatId);
+          }
 
-        io.to(`event-${eventId}`).emit('seat-released', {
-          seatId,
-          seient_id: String(seatId),
-          estat: 'disponible',
+          io.to(`event-${eventId}`).emit('seat-released', {
+            seatId,
+            seient_id: String(seatId),
+            estat: 'disponible',
+          });
+        }
+      } catch (error) {
+        console.error('[socket] Error release-seat:', error);
+        socket.emit('reservation-error', {
+          error: 'ERROR_ALLIBERAR',
+          missatge: 'No s\'ha pogut alliberar el seient',
         });
       }
     });
@@ -220,24 +236,29 @@ async function bootstrap() {
       const eventId = parseInt(String(data?.eventId || data?.esdeveniment_id || 0), 10);
       const userId = parseInt(String(data?.userId || data?.usuari_id || 1), 10) || 1;
 
-      const result = await confirmSeatPurchase(seatId, userId);
-      if (!result.success) {
-        socket.emit('purchase-failed', { seatId, message: result.message });
-        return;
-      }
+      try {
+        const result = await confirmSeatPurchase(seatId, userId);
+        if (!result.success) {
+          socket.emit('purchase-failed', { seatId, message: result.message });
+          return;
+        }
 
-      const session = userSessions.get(socket.id);
-      if (session) {
-        session.seatIds = session.seatIds.filter((id) => id !== seatId);
-      }
+        const session = userSessions.get(socket.id);
+        if (session) {
+          session.seatIds = session.seatIds.filter((id) => id !== seatId);
+        }
 
-      socket.emit('purchase-completed', { seatId });
-      io.to(`event-${eventId}`).emit('seat-sold', {
-        seatId,
-        seient_id: String(seatId),
-        estat: 'venut',
-        purchased_by: userId,
-      });
+        socket.emit('purchase-completed', { seatId });
+        io.to(`event-${eventId}`).emit('seat-sold', {
+          seatId,
+          seient_id: String(seatId),
+          estat: 'venut',
+          purchased_by: userId,
+        });
+      } catch (error) {
+        console.error('[socket] Error purchase-confirm:', error);
+        socket.emit('purchase-failed', { seatId, message: 'Error en confirmar compra' });
+      }
     });
 
     socket.on('confirm-purchase', async (data) => {
@@ -252,21 +273,29 @@ async function bootstrap() {
         return;
       }
 
-      const userId = session.userId || 1;
-      for (const seatId of [...session.seatIds]) {
-        const result = await confirmSeatPurchase(seatId, userId);
-        if (result.success) {
-          io.to(`event-${eventId}`).emit('seat-sold', {
-            seient_id: String(seatId),
-            estat: 'venut',
-          });
+      try {
+        const userId = session.userId || 1;
+        for (const seatId of [...session.seatIds]) {
+          const result = await confirmSeatPurchase(seatId, userId);
+          if (result.success) {
+            io.to(`event-${eventId}`).emit('seat-sold', {
+              seient_id: String(seatId),
+              estat: 'venut',
+            });
+          }
         }
-      }
 
-      session.seatIds = [];
-      socket.emit('reservation-confirmed', {
-        entrades: [{ codi_entrada: `ENT-${Date.now()}` }],
-      });
+        session.seatIds = [];
+        socket.emit('reservation-confirmed', {
+          entrades: [{ codi_entrada: `ENT-${Date.now()}` }],
+        });
+      } catch (error) {
+        console.error('[socket] Error confirm-purchase:', error);
+        socket.emit('reservation-error', {
+          error: 'ERROR_COMPRA',
+          missatge: 'Error en confirmar la compra',
+        });
+      }
     });
 
     socket.on('disconnect', async () => {

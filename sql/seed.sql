@@ -1,0 +1,2 @@
+-- Bootstrap placeholder.
+-- Initial data seeding is managed by Laravel seeders.
