@@ -1,0 +1,60 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROD_HOST: 204.168.240.236
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        run: |
+          SSH_PORT="${{ secrets.PROD_SSH_PORT }}"
+          SSH_PORT="${SSH_PORT:-22}"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "$SSH_PORT" "$PROD_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync project to server
+        run: |
+          SSH_PORT="${{ secrets.PROD_SSH_PORT }}"
+          SSH_PORT="${SSH_PORT:-22}"
+          rsync -az --delete \
+            -e "ssh -p $SSH_PORT" \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '**/node_modules/' \
+            --exclude 'backend-laravel/vendor/' \
+            --exclude 'frontend/.nuxt/' \
+            --exclude 'frontend/.output/' \
+            ./ "${{ secrets.PROD_SSH_USER }}"@"$PROD_HOST":/opt/a23poldiabel/
+
+      - name: Deploy on server
+        run: |
+          SSH_PORT="${{ secrets.PROD_SSH_PORT }}"
+          SSH_PORT="${SSH_PORT:-22}"
+          ssh -p "$SSH_PORT" "${{ secrets.PROD_SSH_USER }}"@"$PROD_HOST" '
+            set -eu
+            cd /opt/a23poldiabel
+            if [ ! -f .env.prod ]; then
+              cp .env.prod.example .env.prod
+              echo "Falta configurar /opt/a23poldiabel/.env.prod."
+              echo "Edita el archivo en el servidor y vuelve a hacer push a main."
+              exit 1
+            fi
+            chmod +x scripts/deploy-prod.sh
+            ./scripts/deploy-prod.sh
+          '
