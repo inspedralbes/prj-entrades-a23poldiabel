@@ -33,7 +33,7 @@ server {
 
   location /socket.io/ {
     set \$sockets_upstream entrades-sockets-prod:3000;
-    proxy_pass http://\$sockets_upstream/socket.io/;
+    proxy_pass http://\$sockets_upstream\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -45,7 +45,7 @@ server {
 
   location /api/ {
     set \$api_upstream entrades-api-prod:8000;
-    proxy_pass http://\$api_upstream/api/;
+    proxy_pass http://\$api_upstream\$request_uri;
     proxy_set_header Host \$host;
     proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -54,7 +54,7 @@ server {
 
   location / {
     set \$frontend_upstream entrades-frontend-prod:3001;
-    proxy_pass http://\$frontend_upstream/;
+    proxy_pass http://\$frontend_upstream\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -100,7 +100,7 @@ server {
 
   location /socket.io/ {
     set \$sockets_upstream entrades-sockets-prod:3000;
-    proxy_pass http://\$sockets_upstream/socket.io/;
+    proxy_pass http://\$sockets_upstream\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -112,7 +112,7 @@ server {
 
   location /api/ {
     set \$api_upstream entrades-api-prod:8000;
-    proxy_pass http://\$api_upstream/api/;
+    proxy_pass http://\$api_upstream\$request_uri;
     proxy_set_header Host \$host;
     proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -121,7 +121,7 @@ server {
 
   location / {
     set \$frontend_upstream entrades-frontend-prod:3001;
-    proxy_pass http://\$frontend_upstream/;
+    proxy_pass http://\$frontend_upstream\$request_uri;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
