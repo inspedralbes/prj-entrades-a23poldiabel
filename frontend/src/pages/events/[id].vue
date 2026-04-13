@@ -324,6 +324,15 @@ function setupSocketHandlers() {
     setTimeout(() => { error.value = null; }, 5000);
   });
 
+  on('auth-error', (data: any) => {
+    avis.value = data?.message || 'Sessio caducada. Torna a iniciar sessio.';
+    setTimeout(() => {
+      if (avis.value === (data?.message || 'Sessio caducada. Torna a iniciar sessio.')) {
+        avis.value = null;
+      }
+    }, 3500);
+  });
+
   on('reservation-confirmed', (data: any) => {
     // Compra confirmada via socket
     console.log('Reserva/compra confirmada:', data);
@@ -364,6 +373,7 @@ onUnmounted(() => {
   off('seats-state');
   off('reservations-expired');
   off('reservation-error');
+  off('auth-error');
   off('reservation-confirmed');
 });
 

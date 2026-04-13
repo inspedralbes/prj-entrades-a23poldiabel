@@ -64,6 +64,7 @@ services:
     environment:
       NODE_ENV: production
       SOCKET_PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
       SOCKET_CORS_ORIGINS: https://${DOMAIN}
       DB_HOST: postgres
       DB_PORT: 5432
