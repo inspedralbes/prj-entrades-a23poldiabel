@@ -1,0 +1,24 @@
+# Git and editor
+.git
+.gitignore
+.vscode
+.idea
+
+# Node dependencies and build outputs
+**/node_modules
+frontend/.nuxt
+frontend/.output
+frontend/dist
+
+# Laravel runtime/vendor
+backend-laravel/vendor
+backend-laravel/storage/logs
+backend-laravel/storage/framework
+backend-laravel/bootstrap/cache/*.php
+
+# Never bake environment files into images
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.prod.example

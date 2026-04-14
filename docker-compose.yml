@@ -1,0 +1,101 @@
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: entrades-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: entrades
+      DB_HOST: entrades-postgres
+      DB_PORT: 5432
+      DB_NAME: entrades
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./sql/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: laravel
+    container_name: entrades-api
+    working_dir: /app/backend-laravel
+    command: sh -c "php artisan serve --host=0.0.0.0 --port=8000"
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret}
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
+      TICKETMASTER_COUNTRY_CODE: ${TICKETMASTER_COUNTRY_CODE:-ES}
+      TICKETMASTER_CITY: ${TICKETMASTER_CITY:-Barcelona}
+      TICKETMASTER_SIZE: ${TICKETMASTER_SIZE:-20}
+      DB_CONNECTION: pgsql
+      DB_HOST: entrades-postgres
+      DB_PORT: 5432
+      DB_DATABASE: entrades
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  sockets:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    container_name: entrades-sockets
+    working_dir: /app/backend
+    command: npm run dev:sockets
+    ports:
+      - "3000:3000"
+    environment:
+      SOCKET_PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret}
+      DB_HOST: entrades-postgres
+      DB_PORT: 5432
+      DB_NAME: entrades
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      NODE_ENV: development
+      SOCKET_CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      MAX_SEIENTS_PER_RESERVA: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: entrades-frontend
+    working_dir: /app/frontend
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      NUXT_PUBLIC_API_URL: http://localhost:8000/api
+      NUXT_PUBLIC_SOCKET_URL: http://localhost:3000
+    depends_on:
+      - api
+      - sockets
+
+volumes:
+  postgres_data:
