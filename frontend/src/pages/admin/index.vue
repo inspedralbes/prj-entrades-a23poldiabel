@@ -76,6 +76,11 @@
               <div class="stat-row reservats"><span>Reservats</span><span>{{ adminStats.seients.reservats }}</span></div>
               <div class="stat-row venuts"><span>Venuts</span><span>{{ adminStats.seients.venuts }}</span></div>
             </div>
+            <AdminRevenueChart
+              :disponibles="adminStats.seients.disponibles"
+              :reservats="adminStats.seients.reservats"
+              :venuts="adminStats.seients.venuts"
+            />
           </div>
 
           <div class="card stats-card">
@@ -120,6 +125,8 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import type { AdminEvent } from '~/stores/adminStore';
 import { useAdminStore } from '~/stores/adminStore';
 import { useSocketClient } from '~/services/socketClient';
+import AdminRevenueChart from '~/components/admin/AdminRevenueChart.vue';
+import { toBackendDatetime, toInputDatetime } from '~/utils/dateTime';
 
 definePageMeta({
   middleware: ['auth', 'admin'],
@@ -196,18 +203,6 @@ function formatDate(data: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function toInputDatetime(value: string) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function toBackendDatetime(value: string) {
-  if (!value) return '';
-  return `${value.replace('T', ' ')}:00`;
 }
 
 function resetForm() {

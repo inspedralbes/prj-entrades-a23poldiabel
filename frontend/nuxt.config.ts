@@ -10,6 +10,17 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 
+  routeRules: {
+    '/': { ssr: true },
+    '/login': { prerender: true },
+    '/register': { prerender: true },
+    '/events': { prerender: true },
+    '/events/**': { prerender: true },
+    '/checkout': { prerender: true },
+    '/account': { prerender: true },
+    '/admin': { prerender: true },
+  },
+
   app: {
     head: {
       title: 'a23poldiabel',

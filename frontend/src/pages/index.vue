@@ -5,8 +5,8 @@
       <h1>a23poldiabel</h1>
       <p>Reserva en temps real, compra en segons, i viu cada esdeveniment amb una interfície pensada per emocionar.</p>
       <div class="hero-buttons">
-        <NuxtLink to="/login" class="btn btn-primary">Entrar</NuxtLink>
-        <NuxtLink to="/register" class="btn btn-secondary">Crear compte</NuxtLink>
+        <PButton label="Entrar" size="large" @click="goLogin" />
+        <PButton label="Crear compte" size="large" outlined @click="goRegister" />
       </div>
 
       <div class="mini-metrics">
@@ -28,9 +28,19 @@
 </template>
 
 <script setup lang="ts">
+const router = useRouter();
+
 definePageMeta({
   middleware: 'auth'
 });
+
+function goLogin() {
+  router.push('/login');
+}
+
+function goRegister() {
+  router.push('/register');
+}
 </script>
 
 <style scoped>
